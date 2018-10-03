@@ -1,0 +1,10 @@
+Name: tagged_container
+Config:
+  Labels:
+    org.discourse.mobystash.tag._type: applog
+    org.discourse.mobystash.tag.fred: jones
+  Hostname: tagged-container
+  Image: rspec/tagged_container:latest
+Image: poiuytrewqtagged
+id: asdfasdftagged
+

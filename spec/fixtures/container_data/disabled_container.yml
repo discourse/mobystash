@@ -1,0 +1,9 @@
+Name: disabled_container
+Config:
+  Labels:
+    org.discourse.mobystash.disable: yes
+  Hostname: disabled-container
+  Image: rspec/disabled_container:latest
+Image: poiuytrewqdisabled
+id: asdfasdfdisabled
+

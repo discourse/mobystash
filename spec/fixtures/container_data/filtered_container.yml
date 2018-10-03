@@ -1,0 +1,9 @@
+Name: filtered_container
+Config:
+  Labels:
+    org.discourse.mobystash.filter_regex: Z
+  Hostname: filtered-container
+  Image: rspec/filtered_container:latest
+Image: poiuytrewqfiltered
+id: asdfasdffiltered
+
