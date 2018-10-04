@@ -59,13 +59,19 @@ module Mobystash
     end
 
     def parse_labels(labels)
+      @logger.debug(progname) { "Parsing labels: #{labels.inspect}" }
+
       labels.each do |lbl, val|
         case lbl
         when "org.discourse.mobystash.disable"
-          @capture_logs = !!(val =~ /\Ayes|1|on|true\z/i)
+          @logger.debug(progname) { "Found disable label, value: #{val.inspect}" }
+          @capture_logs = !(val =~ /\Ayes|1|on|true\z/i)
+          @logger.debug(progname) { "@capture_logs is now #{@capture_logs.inspect}" }
         when "org.discourse.mobystash.filter_regex"
+          @logger.debug(progname) { "Found filter_regex label, value: #{val.inspect}" }
           @filter_regex = Regexp.new(val)
         when /\Aorg\.discourse\.mobystash\.tag\.(.*)\z/
+          @logger.debug(progname) { "Found tag label #{$1}, value: #{val.inspect}" }
           @tags[$1] = val
         end
       end

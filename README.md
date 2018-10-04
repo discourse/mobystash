@@ -147,7 +147,10 @@ provide a "convenience copy" of their log data to Docker.  To prevent
 `mobystash` from sending duplicates of those log entries, containers can
 label themselves to tell `mobystash` to not bother logging their output at
 all, by setting the `org.discourse.mobystash.disable` label to a true-ish
-value (one of `yes`, `1`, `true`, or `on` -- all case-insensitive).
+value (one of `yes`, `1`, `true`, or `on` -- all case-insensitive), like
+this:
+
+    --label org.discourse.mobystash.disable=yes
 
 
 ## Filtering forwarded log entries
