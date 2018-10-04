@@ -101,7 +101,7 @@ describe Mobystash::System do
         end
 
         it "fires up the metrics server" do
-          expect(Frankenstein::Server).to receive(:new).with(port: 9367, logger: logger, registry: instance_of(Prometheus::Client::Registry)).and_return(mock_metrics_server)
+          expect(Frankenstein::Server).to receive(:new).with(port: 9367, logger: logger, registry: instance_of(Prometheus::Client::Registry), metrics_prefix: :mobystash_metrics).and_return(mock_metrics_server)
           expect(mock_metrics_server).to receive(:run)
 
           system.run
