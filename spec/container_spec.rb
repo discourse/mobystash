@@ -4,6 +4,8 @@ require 'mobystash/config'
 require 'mobystash/container'
 
 describe Mobystash::Container do
+  DOC_ID_REGEX = /\A[A-Za-z0-9+\/]{22}\z/.freeze
+
   uses_logger
 
   let(:env) do
@@ -70,16 +72,19 @@ describe Mobystash::Container do
         expect(mock_writer)
           .to receive(:send_event)
           .with(
-            "@timestamp"    => "2018-10-02T08:39:16.458228203Z",
-            "moby.name"     => "basic_container",
-            "moby.id"       => "asdfasdfbasic",
-            "moby.hostname" => "basic-container",
-            "moby.image"    => "rspec/basic_container:latest",
-            "moby.image_id" => "poiuytrewqbasic",
-            "moby.stream"   => "stdout",
-            "message"       => "xyzzy",
-            "@metadata"     => {
-              "_id" => match(/\A[A-Za-z0-9+]{22}\z/),
+            message:      "xyzzy",
+            moby:         {
+              name:     "basic_container",
+              id:       "asdfasdfbasic",
+              hostname: "basic-container",
+              image:    "rspec/basic_container:latest",
+              image_id: "poiuytrewqbasic",
+              stream:   "stdout",
+            },
+            "@timestamp": "2018-10-02T08:39:16.458228203Z",
+            "@metadata":  {
+              _id:   match(DOC_ID_REGEX),
+              _type: "moby",
             },
           )
 
@@ -137,16 +142,19 @@ describe Mobystash::Container do
         expect(mock_writer)
           .to receive(:send_event)
           .with(
-            "@timestamp"    => "2018-10-02T08:39:16.458228203Z",
-            "moby.name"     => "filtered_container",
-            "moby.id"       => "asdfasdffiltered",
-            "moby.hostname" => "filtered-container",
-            "moby.image"    => "rspec/filtered_container:latest",
-            "moby.image_id" => "poiuytrewqfiltered",
-            "moby.stream"   => "stdout",
-            "message"       => "A",
-            "@metadata"     => {
-              "_id" => match(/\A[A-Za-z0-9+]{22}\z/),
+            message:      "A",
+            moby:         {
+              name:     "filtered_container",
+              id:       "asdfasdffiltered",
+              hostname: "filtered-container",
+              image:    "rspec/filtered_container:latest",
+              image_id: "poiuytrewqfiltered",
+              stream:   "stdout",
+            },
+            "@timestamp": "2018-10-02T08:39:16.458228203Z",
+            "@metadata":  {
+              _id:   match(DOC_ID_REGEX),
+              _type: "moby",
             },
           )
 
@@ -189,18 +197,24 @@ describe Mobystash::Container do
         expect(mock_writer)
           .to receive(:send_event)
           .with(
-            "@timestamp"    => "2018-10-02T08:39:16.458228203Z",
-            "moby.name"     => "tagged_container",
-            "moby.id"       => "asdfasdftagged",
-            "moby.hostname" => "tagged-container",
-            "moby.image"    => "rspec/tagged_container:latest",
-            "moby.image_id" => "poiuytrewqtagged",
-            "moby.stream"   => "stdout",
-            "message"       => "A",
-            "_type"         => "applog",
-            "fred"          => "jones",
-            "@metadata"     => {
-              "_id" => match(/\A[A-Za-z0-9+]{22}\z/),
+            message:      "A",
+            something:    "funny",
+            fred:         "jones",
+            nested:       {
+              tags: "work",
+            },
+            moby:         {
+              name:     "tagged_container",
+              id:       "asdfasdftagged",
+              hostname: "tagged-container",
+              image:    "rspec/tagged_container:latest",
+              image_id: "poiuytrewqtagged",
+              stream:   "stdout",
+            },
+            "@timestamp": "2018-10-02T08:39:16.458228203Z",
+            "@metadata":  {
+              _id:   match(DOC_ID_REGEX),
+              _type: "overridden",
             },
           )
 
@@ -235,16 +249,19 @@ describe Mobystash::Container do
         expect(mock_writer)
           .to receive(:send_event)
           .with(
-            "@timestamp"    => "2018-10-02T08:39:16.458228203Z",
-            "moby.name"     => "tty_container",
-            "moby.id"       => "asdfasdftty",
-            "moby.hostname" => "tty-container",
-            "moby.image"    => "rspec/tty_container:latest",
-            "moby.image_id" => "poiuytrewqtty",
-            "moby.stream"   => "tty",
-            "message"       => "tee tee whyyyyyy!",
-            "@metadata"     => {
-              "_id" => match(/\A[A-Za-z0-9+]{22}\z/),
+            message:      "tee tee whyyyyyy!",
+            moby:         {
+              name:     "tty_container",
+              id:       "asdfasdftty",
+              hostname: "tty-container",
+              image:    "rspec/tty_container:latest",
+              image_id: "poiuytrewqtty",
+              stream:   "tty",
+            },
+            "@timestamp": "2018-10-02T08:39:16.458228203Z",
+            "@metadata":  {
+              _id:   match(DOC_ID_REGEX),
+              _type: "moby",
             },
           )
 

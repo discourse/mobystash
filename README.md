@@ -176,10 +176,24 @@ attach a label of the form `org.discourse.mobystash.tag.<name>`; for
 example, to set `_type` to `applog`, you could use this `docker run`
 command-line option:
 
-    --label org.discourse.mobystash.tag._type=applog
+    --label org.discourse.mobystash.tag.fred=jones
+
+You can also set nested tags:
+
+    --label org.discourse.mobystash.tag.something.funny=wombat
+
+This will be transformed into a nested object, like so:
+
+    {
+      "something":
+      {
+        "funny": "wombat"
+      }
+    }
 
 There are a number of pre-defined tags that every event sent to logstash will
-also include:
+include.  Any per-container tags you set via labels will override the
+default values.  The pre-defined tags cannot be removed, only modified.
 
 * `moby.name` -- the name of the container that emitted the log entry.
 * `moby.id` -- the full hex ID of the container that emitted the log
@@ -193,8 +207,11 @@ also include:
   the log entry was sent over.
 * `@timestamp` -- the time at which the log entry was received by the Moby
   daemon.
-* `_id` -- a pseudorandom identifying string; this allows
+* `@metadata._id` -- a pseudorandom identifying string; this allows
   logstash/elasticsearch to de-duplicate log entries if required.
+* `@metadata._type` -- set to "moby" by default; allows logstash to process
+  and/or index these logs differently to others
+* `message` -- the full message string provided in the log entry.
 
 
 # Signals

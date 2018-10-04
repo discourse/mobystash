@@ -1,3 +1,4 @@
+require 'deep_merge'
 require 'logstash_writer'
 require 'murmurhash3'
 
@@ -22,11 +23,13 @@ module Mobystash
 
       @capture_logs = true
       @tags = {
-        "moby.name"     => @name,
-        "moby.id"       => @id,
-        "moby.hostname" => docker_data.info["Config"]["Hostname"],
-        "moby.image"    => docker_data.info["Config"]["Image"],
-        "moby.image_id" => docker_data.info["Image"],
+        moby: {
+          name:     @name,
+          id:       @id,
+          hostname: docker_data.info["Config"]["Hostname"],
+          image:    docker_data.info["Config"]["Image"],
+          image_id: docker_data.info["Image"],
+        }
       }
 
       @last_log_timestamp = Time.at(0)
@@ -72,8 +75,24 @@ module Mobystash
           @filter_regex = Regexp.new(val)
         when /\Aorg\.discourse\.mobystash\.tag\.(.*)\z/
           @logger.debug(progname) { "Found tag label #{$1}, value: #{val.inspect}" }
-          @tags[$1] = val
+          @tags.deep_merge!(hashify_tag($1, val))
+          @logger.debug(progname) { "Container tags is now #{@tags.inspect}" }
         end
+      end
+    end
+
+    # Turn a dot-separated sequence of strings into a nested hash.
+    #
+    # @example
+    #    hashify_tag("a.b.c", "42")
+    #    => { a: { b: { c: "42" } } }
+    #
+    def hashify_tag(tag, val)
+      if tag.index(".")
+        tag, rest = tag.split(".", 2)
+        { tag.to_sym => hashify_tag(rest, val) }
+      else
+        { tag.to_sym => val }
       end
     end
 
@@ -105,8 +124,18 @@ module Mobystash
       ts, msg = msg.chomp.split(' ', 2)
       @last_log_timestamp = Time.strptime(ts, "%FT%T.%N%Z")
       unless @filter_regex && @filter_regex =~ msg
-        event = @tags.merge("moby.stream" => stream.to_s, "@timestamp" => ts, "message" => msg)
-        event["@metadata"] = { "_id" => MurmurHash3::V128.murmur3_128_str_base64digest(event.to_json)[0..-3] }
+        event = {
+          message: msg,
+          "@timestamp": ts,
+          moby: {
+            stream: stream.to_s,
+          },
+          "@metadata": {
+            _id:   MurmurHash3::V128.murmur3_128_str_base64digest(event.to_json)[0..-3],
+            _type: "moby",
+          }
+        }.deep_merge!(@tags)
+
         @config.logstash_writer.send_event(event)
         @config.log_entries_sent_counter.increment(container_name: @name, container_id: @id, stream: stream)
       end

@@ -2,6 +2,7 @@ ruby '> 2.3', '< 2.6'
 
 source 'https://rubygems.org'
 
+gem 'deep_merge'
 gem 'docker-api', '~> 1.33'
 # See https://github.com/swipely/docker-api/issues/409
 gem 'excon', '~> 0.59'
