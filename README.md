@@ -49,6 +49,18 @@ this in your `logstash.conf` will do the trick:
       }
     }
 
+To avoid the problem of duplicating log entries, particularly on restart,
+mobystash generates a document ID which is tied to the specific content of
+each log message.  If you configure your elasticsearch output plugin as
+follows, you'll automatically get deduplication:
+
+    output {
+      elasticsearch {
+        # ...
+        document_id => "%{[@metadata][_id]}"
+      }
+    }
+
 
 # Configuration
 

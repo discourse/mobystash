@@ -100,7 +100,7 @@ module Mobystash
       @last_log_timestamp = Time.strptime(ts, "%FT%T.%N%Z")
       unless @filter_regex && @filter_regex =~ msg
         event = @tags.merge("moby.stream" => stream.to_s, "@timestamp" => ts, "message" => msg)
-        event["_id"] = MurmurHash3::V128.murmur3_128_str_base64digest(event.to_json)[0..-3]
+        event["@metadata"] = { "_id" => MurmurHash3::V128.murmur3_128_str_base64digest(event.to_json)[0..-3] }
         @config.logstash_writer.send_event(event)
         @config.log_entries_sent_counter.increment(container_name: @name, container_id: @id, stream: stream)
       end

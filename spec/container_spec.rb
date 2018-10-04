@@ -78,7 +78,9 @@ describe Mobystash::Container do
             "moby.image_id" => "poiuytrewqbasic",
             "moby.stream"   => "stdout",
             "message"       => "xyzzy",
-            "_id"           => match(/\A[A-Za-z0-9+]{22}\z/),
+            "@metadata"     => {
+              "_id" => match(/\A[A-Za-z0-9+]{22}\z/),
+            },
           )
 
         container.run
@@ -143,7 +145,9 @@ describe Mobystash::Container do
             "moby.image_id" => "poiuytrewqfiltered",
             "moby.stream"   => "stdout",
             "message"       => "A",
-            "_id"           => match(/\A[A-Za-z0-9+]{22}\z/),
+            "@metadata"     => {
+              "_id" => match(/\A[A-Za-z0-9+]{22}\z/),
+            },
           )
 
         container.run
@@ -195,7 +199,9 @@ describe Mobystash::Container do
             "message"       => "A",
             "_type"         => "applog",
             "fred"          => "jones",
-            "_id"           => match(/\A[A-Za-z0-9+]{22}\z/),
+            "@metadata"     => {
+              "_id" => match(/\A[A-Za-z0-9+]{22}\z/),
+            },
           )
 
         container.run
@@ -237,7 +243,9 @@ describe Mobystash::Container do
             "moby.image_id" => "poiuytrewqtty",
             "moby.stream"   => "tty",
             "message"       => "tee tee whyyyyyy!",
-            "_id"           => match(/\A[A-Za-z0-9+]{22}\z/),
+            "@metadata"     => {
+              "_id" => match(/\A[A-Za-z0-9+]{22}\z/),
+            },
           )
 
         container.run
