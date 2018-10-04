@@ -225,7 +225,7 @@ describe Mobystash::System do
       it "logs an error" do
         expect(mock_queue).to receive(:pop).and_return("whaddya mean this ain't a valid message?!?")
 
-        expect(logger).to receive(:error)
+        expect_log_message(logger, :error, "Mobystash::System", /whaddya mean/)
 
         system.run
       end
@@ -268,6 +268,7 @@ describe Mobystash::System do
       expect(Docker::Container).to receive(:get).with("asdfasdfbasic", {}, mock_conn)
       expect(Docker::Container).to receive(:get).with("asdfasdffiltered", {}, mock_conn).and_raise(Docker::Error::NotFoundError)
       expect(Docker::Container).to receive(:get).with("asdfasdfdisabled", {}, mock_conn)
+      expect(logger).to_not receive(:error)
 
       system.send(:run_existing_containers)
 

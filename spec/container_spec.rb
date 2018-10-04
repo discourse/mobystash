@@ -108,7 +108,7 @@ describe Mobystash::Container do
 
       it "does not ask for logs" do
         expect(Docker::Container).to_not receive(:get)
-        expect(container).to receive(:sleep).and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
+        expect(container).to receive(:sleep).with(no_args).and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
 
         container.run
       end
@@ -266,7 +266,7 @@ describe Mobystash::Container do
       end
 
       it "logs the error" do
-        expect(logger).to receive(:error).with("Mobystash::Container(asdfasdfbasi)")
+        expect_log_message(logger, :error, "Mobystash::Container(asdfasdfbasi)", /NotFoundError/)
 
         container.run
       end

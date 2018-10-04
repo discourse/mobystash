@@ -11,4 +11,12 @@ module ExampleMethods
   def container_fixtures(*names)
     names.map { |n| container_fixture(n) }
   end
+
+  # Yes, this could be a matcher, but honestly it's just much easier this way
+  def expect_log_message(logger, level, progname, message_regex)
+    expect(logger).to receive(level.to_sym) do |pn, &msg|
+      expect(pn).to eq(progname)
+      expect(msg.call).to match(message_regex)
+    end
+  end
 end

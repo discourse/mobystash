@@ -106,7 +106,7 @@ describe Mobystash::MobyWatcher do
 
     it "logs and counts unknown exceptions in the event processing loop" do
       expect(Docker::Event).to receive(:since).with(1234567890, {}, mock_conn).and_raise(RuntimeError, "ZOMG")
-      expect(logger).to receive(:error)
+      expect_log_message(logger, :error, "Mobystash::MobyWatcher(\"unix:///var/run/test.sock\")", /ZOMG/)
       expect(watcher).to receive(:sleep).with(1)
       expect(Docker::Event).to receive(:since).with(1234567890, {}, mock_conn).and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
 
