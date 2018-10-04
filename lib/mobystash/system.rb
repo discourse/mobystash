@@ -44,7 +44,7 @@ module Mobystash
         Frankenstein::ProcessMetrics.register(@config.metrics_registry)
         Frankenstein::RubyGCMetrics.register(@config.metrics_registry)
 
-        @metrics_server = Frankenstein::Server.new(port: 9367, logger: @logger, registry: @config.metrics_registry)
+        @metrics_server = Frankenstein::Server.new(port: 9367, logger: @logger, registry: @config.metrics_registry, metrics_prefix: :mobystash_metrics)
         @metrics_server.run
       end
 
