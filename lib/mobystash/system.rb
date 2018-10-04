@@ -89,6 +89,11 @@ module Mobystash
       @queue.push([:terminate])
     end
 
+    # Force LogstashWriter to reconnect
+    def reconnect!
+      @config.logstash_writer.force_disconnect!
+    end
+
     private
 
     def progname

@@ -46,6 +46,14 @@ describe Mobystash::System do
     allow(mock_writer).to receive(:stop)
   end
 
+  describe "#reconnect!" do
+    it "tells the writer to disconnect" do
+      expect(mock_writer).to receive(:force_disconnect!)
+
+      system.reconnect!
+    end
+  end
+
   describe "#shutdown" do
     it "sends the special :terminate message" do
       expect(mock_queue).to receive(:push).with([:terminate])
@@ -53,6 +61,7 @@ describe Mobystash::System do
       system.shutdown
     end
   end
+
   describe "#run" do
     before(:each) do
       # Stub this out, since run_existing_containers has its own tests

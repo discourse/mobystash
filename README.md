@@ -193,8 +193,11 @@ the following signals to control the running service:
 * **`USR2`**: Decrease the verbosity of logging, `DEBUG` -> `INFO` -> `WARN`
   -> `ERROR`.  Errors are always logged.
 
-* **`TERM`**: Terminate gracefully, waiting for all queued events to be sent
-  to logstash before exiting.
+* **`TERM`** / **`INT`**: Terminate gracefully, waiting for all queued
+  events to be sent to logstash before exiting.
+
+* **`HUP`**: Disconnect from the currently-connected logstash server, and
+  reconnect to a new server on the next log message received.
 
 
 # Instrumentation

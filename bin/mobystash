@@ -33,6 +33,10 @@ Signal.trap("INT") do
   sig_w.print 'I'
 end
 
+Signal.trap("HUP") do
+  sig_w.print 'H'
+end
+
 begin
   system = Mobystash::System.new(ENV, logger: logger)
 
@@ -52,6 +56,9 @@ begin
         elsif c == '2'
           logger.level += 1 unless logger.level == Logger::ERROR
           logger.info($0) { "Received SIGUSR2; log level is now #{Logger::SEV_LABEL[logger.level]}." }
+        elsif c == 'H'
+          logger.info($0) { "Received SIGHUP." }
+          system.reconnect!
         else
           logger.error($0) { "Got an unrecognised character from signal pipe: #{c.inspect}" }
         end
