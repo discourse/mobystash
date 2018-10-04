@@ -50,6 +50,8 @@ module Mobystash
 
       run_existing_containers
 
+      @logger.info(progname) { "Commencing real-time log collection" }
+
       loop do
         item = @queue.pop
         @logger.debug(progname) { "Received message #{item.inspect}" }
