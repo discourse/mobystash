@@ -83,8 +83,8 @@ describe Mobystash::Container do
             },
             "@timestamp": "2018-10-02T08:39:16.458228203Z",
             "@metadata":  {
-              _id:   match(DOC_ID_REGEX),
-              _type: "moby",
+              document_id: match(DOC_ID_REGEX),
+              event_type:  "moby",
             },
           )
 
@@ -153,8 +153,8 @@ describe Mobystash::Container do
             },
             "@timestamp": "2018-10-02T08:39:16.458228203Z",
             "@metadata":  {
-              _id:   match(DOC_ID_REGEX),
-              _type: "moby",
+              document_id: match(DOC_ID_REGEX),
+              event_type:  "moby",
             },
           )
 
@@ -213,8 +213,8 @@ describe Mobystash::Container do
             },
             "@timestamp": "2018-10-02T08:39:16.458228203Z",
             "@metadata":  {
-              _id:   match(DOC_ID_REGEX),
-              _type: "overridden",
+              document_id: match(DOC_ID_REGEX),
+              event_type:  "overridden",
             },
           )
 
@@ -260,8 +260,8 @@ describe Mobystash::Container do
             },
             "@timestamp": "2018-10-02T08:39:16.458228203Z",
             "@metadata":  {
-              _id:   match(DOC_ID_REGEX),
-              _type: "moby",
+              document_id: match(DOC_ID_REGEX),
+              event_type:  "moby",
             },
           )
 

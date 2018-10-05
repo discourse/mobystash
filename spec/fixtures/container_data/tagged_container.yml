@@ -4,7 +4,7 @@ Config:
     org.discourse.mobystash.tag.something: "funny"
     org.discourse.mobystash.tag.fred: "jones"
     org.discourse.mobystash.tag.nested.tags: "work"
-    org.discourse.mobystash.tag.@metadata._type: "overridden"
+    org.discourse.mobystash.tag.@metadata.event_type: "overridden"
   Hostname: tagged-container
   Image: rspec/tagged_container:latest
 Image: poiuytrewqtagged
