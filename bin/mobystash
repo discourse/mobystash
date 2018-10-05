@@ -13,7 +13,7 @@ if ENV['MOBYSTASH_DEBUG_MODULES'] && ENV['MOBYSTASH_DEBUG_MODULES'] != ""
   logger.permitted_prognames = ENV['MOBYSTASH_DEBUG_MODULES'].split(/,\s*/)
 end
 
-logger.formatter = ->(s, t, p, m) { "#{s[0]} #{p} #{m}\n" }
+logger.formatter = ->(s, t, p, m) { "#{s[0]} (#{p}) #{m}\n" }
 
 sig_r, sig_w = IO.pipe
 
