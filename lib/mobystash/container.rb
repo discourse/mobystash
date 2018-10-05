@@ -130,11 +130,16 @@ module Mobystash
           moby: {
             stream: stream.to_s,
           },
+        }.deep_merge!(@tags)
+
+        # Can't calculate the document_id until you've got a constructed event...
+        metadata = {
           "@metadata": {
             document_id: MurmurHash3::V128.murmur3_128_str_base64digest(event.to_json)[0..-3],
             event_type:  "moby",
           }
-        }.deep_merge!(@tags)
+
+        event = event.deep_merge(metadata)
 
         @config.logstash_writer.send_event(event)
         @config.log_entries_sent_counter.increment(container_name: @name, container_id: @id, stream: stream)
