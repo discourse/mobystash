@@ -3,6 +3,7 @@
 require 'mobystash/system'
 require 'logger'
 require 'loggerstash'
+require 'rbtrace'
 
 logger = Logger.new($stderr)
 logger.level = Logger.const_get((ENV['MOBYSTASH_LOG_LEVEL'] || "INFO").upcase)
