@@ -138,6 +138,7 @@ module Mobystash
             document_id: MurmurHash3::V128.murmur3_128_str_base64digest(event.to_json)[0..-3],
             event_type:  "moby",
           }
+        }
 
         event = event.deep_merge(metadata)
 
