@@ -100,17 +100,26 @@ module Mobystash
       if @capture_logs
         @logger.debug(progname) { "Capturing logs since #{@last_log_timestamp.strftime("%FT%T.%NZ")}" }
 
-        c = Docker::Container.get(@id, {}, conn)
-        c.streaming_logs(since: @last_log_timestamp.strftime("%s.%N"), timestamps: true, follow: true, stdout: true, stderr: true, tty: c.info["Config"]["Tty"]) do |s, msg|
-          # Le sigh... normally, the first argument is the stream and the
-          # second is the message, but if we're running a TTY, the first argument is actually
-          # the message and the second argument is nil.  WHYYYYYYYYYYY?!??!
-          if msg.nil?
-            msg = s
-            s = :tty
-          end
+        begin
+          c = Docker::Container.get(@id, {}, conn)
+          c.streaming_logs(since: @last_log_timestamp.strftime("%s.%N"), timestamps: true, follow: true, stdout: true, stderr: true, tty: c.info["Config"]["Tty"]) do |s, msg|
+            # Le sigh... normally, the first argument is the stream and the
+            # second is the message, but if we're running a TTY, the first argument is actually
+            # the message and the second argument is nil.  WHYYYYYYYYYYY?!??!
+            if msg.nil?
+              msg = s
+              s = :tty
+            end
 
-          send_event(msg, s)
+            send_event(msg, s)
+          end
+        rescue Docker::Error::NotFoundError
+          # This happens when the container terminates, but we beat the System
+          # in the race and we call Docker::Container.get before the System
+          # shuts us down.  Since we'll be terminated soon anyway, we may as
+          # well do it first.
+          @logger.info(progname) { "Container has terminated." }
+          raise TerminateEventWorker
         end
       else
         @logger.debug(progname) { "Not capturing logs because mobystash is disabled" }

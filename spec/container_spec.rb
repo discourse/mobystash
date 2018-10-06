@@ -269,7 +269,27 @@ describe Mobystash::Container do
       end
     end
 
-    context "when everything goes wrong" do
+    context "when an error occurs" do
+      let(:container_id)   { "asdfasdfbasic" }
+      let(:container_name) { "basic_container" }
+
+      before :each do
+        expect(Docker::Container)
+          .to receive(:get)
+          .and_raise(Errno::EBADF)
+        expect(Docker::Container)
+          .to receive(:get)
+          .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
+      end
+
+      it "logs the error" do
+        expect_log_message(logger, :error, "Mobystash::Container(asdfasdfbasi)", /EBADF/)
+
+        container.run
+      end
+    end
+
+    context "when the container goes away" do
       let(:container_id)   { "asdfasdfbasic" }
       let(:container_name) { "basic_container" }
 
@@ -277,13 +297,10 @@ describe Mobystash::Container do
         expect(Docker::Container)
           .to receive(:get)
           .and_raise(Docker::Error::NotFoundError)
-        expect(Docker::Container)
-          .to receive(:get)
-          .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
       end
 
       it "logs the error" do
-        expect_log_message(logger, :error, "Mobystash::Container(asdfasdfbasi)", /NotFoundError/)
+        expect_log_message(logger, :info, "Mobystash::Container(asdfasdfbasi)", /Container has terminated/)
 
         container.run
       end
