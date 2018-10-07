@@ -11,7 +11,7 @@ gem 'loggerstash', '~> 0.0.2'
 gem 'logstash_writer', '~> 0.0'
 gem 'murmurhash3', '~> 0.1'
 gem 'rbtrace', '~> 0.4'
-
+gem 'sigdump', require: 'sigdump/setup'
 group :development do
   gem 'byebug'
   gem 'guard-rspec'

@@ -1,5 +1,14 @@
 #!/usr/bin/env ruby
 
+if ENV['RUBY_TRACE_ALLOCATIONS'] == "yep"
+  require 'objspace'
+
+  ObjectSpace.trace_object_allocations_start
+end
+
+require 'sigdump'
+Sigdump.setup('SIGCONT', '+')
+
 require 'mobystash/system'
 require 'logger'
 require 'loggerstash'
