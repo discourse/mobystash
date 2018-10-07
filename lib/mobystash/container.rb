@@ -2,6 +2,7 @@ require 'deep_merge'
 require 'logstash_writer'
 require 'murmurhash3'
 
+require 'mobystash/moby_chunk_parser'
 require 'mobystash/moby_event_worker'
 
 module Mobystash
@@ -32,7 +33,7 @@ module Mobystash
         }
       }
 
-      @last_log_timestamp = Time.at(0)
+      @last_log_timestamp = Time.at(0).utc.strftime("%FT%T.%NZ")
 
       parse_labels(docker_data.info["Config"]["Labels"])
 
@@ -98,21 +99,31 @@ module Mobystash
 
     def process_events(conn)
       if @capture_logs
-        @logger.debug(progname) { "Capturing logs since #{@last_log_timestamp.strftime("%FT%T.%NZ")}" }
+        @logger.debug(progname) { "Capturing logs since #{@last_log_timestamp}" }
 
         begin
           c = Docker::Container.get(@id, {}, conn)
-          c.streaming_logs(since: @last_log_timestamp.strftime("%s.%N"), timestamps: true, follow: true, stdout: true, stderr: true, tty: c.info["Config"]["Tty"]) do |s, msg|
-            # Le sigh... normally, the first argument is the stream and the
-            # second is the message, but if we're running a TTY, the first argument is actually
-            # the message and the second argument is nil.  WHYYYYYYYYYYY?!??!
-            if msg.nil?
-              msg = s
-              s = :tty
-            end
-
+          # The implementation of Docker::Container#streaming_logs has a
+          # *terribad* memory leak, in that every log entry that gets received
+          # gets stored in a couple of arrays, which only gets cleared when
+          # the call to #streaming_logs finishes... which is bad, because
+          # we like these to go on for a long time.  So, instead, we need to
+          # do our own thing directly, by hand.
+          chunk_parser = Mobystash::MobyChunkParser.new(tty: c.info["Config"]["Tty"]) do |msg, s|
             send_event(msg, s)
           end
+
+          conn.get(
+            "/containers/#{@id}/logs",
+            {
+              since:      Time.strptime(@last_log_timestamp, "%FT%T.%N%Z").strftime("%s.%N"),
+              timestamps: true,
+              follow:     true,
+              stdout:     true,
+              stderr:     true,
+            },
+            response_block: chunk_parser
+          )
         rescue Docker::Error::NotFoundError
           # This happens when the container terminates, but we beat the System
           # in the race and we call Docker::Container.get before the System
@@ -130,12 +141,11 @@ module Mobystash
     def send_event(msg, stream)
       @config.log_entries_read_counter.increment(container_name: @name, container_id: @id, stream: stream)
 
-      ts, msg = msg.chomp.split(' ', 2)
-      @last_log_timestamp = Time.strptime(ts, "%FT%T.%N%Z")
+      @last_log_timestamp, msg = msg.chomp.split(' ', 2)
       unless @filter_regex && @filter_regex =~ msg
         event = {
           message: msg,
-          "@timestamp": ts,
+          "@timestamp": @last_log_timestamp,
           moby: {
             stream: stream.to_s,
           },

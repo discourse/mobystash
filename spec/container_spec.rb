@@ -40,6 +40,7 @@ describe Mobystash::Container do
 
     before(:each) do
       allow(Docker::Connection).to receive(:new).with("unix:///var/run/docker.sock", read_timeout: 3600).and_return(mock_conn)
+      allow(mock_conn).to receive(:get).and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
       allow(Docker::Container).to receive(:new).with(instance_of(Docker::Connection), instance_of(Hash)).and_call_original
       allow(Docker::Container).to receive(:get).with(container_id, {}, mock_conn).and_return(mock_moby_container)
       allow(mock_moby_container).to receive(:info).and_return("Config" => { "Tty" => false })
@@ -54,19 +55,33 @@ describe Mobystash::Container do
       let(:container_id)   { "asdfasdfbasic" }
 
       it "asks for logs" do
-        expect(mock_moby_container)
-          .to receive(:streaming_logs)
-          .with(timestamps: true, stdout: true, stderr: true, follow: true, tty: false, since: "0.000000000")
+        expect(mock_conn)
+          .to receive(:get)
+          .with("/containers/asdfasdfbasic/logs",
+            { timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000" },
+            response_block: instance_of(Mobystash::MobyChunkParser)
+          )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
 
         container.run
       end
 
       it "forwards logs" do
-        expect(mock_moby_container)
-          .to receive(:streaming_logs)
-          .with(timestamps: true, stdout: true, stderr: true, follow: true, tty: false, since: "0.000000000")
-          .and_yield(:stdout, "2018-10-02T08:39:16.458228203Z xyzzy")
+        expect(mock_conn)
+          .to receive(:get) do |path, opts, excon_opts|
+            expect(path).to eq("/containers/asdfasdfbasic/logs")
+            expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000")
+            expect(excon_opts).to have_key(:response_block)
+            expect(excon_opts[:response_block]).to be_a(Mobystash::MobyChunkParser)
+
+            excon_opts[:response_block].call("\x01\x00\x00\x00\x00\x00\x00$2018-10-02T08:39:16.458228203Z xyzzy", 0, 0)
+          end.ordered.and_return(nil)
+        expect(mock_conn)
+          .to receive(:get)
+          .with("/containers/asdfasdfbasic/logs",
+            { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228203" },
+            response_block: instance_of(Mobystash::MobyChunkParser)
+          )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
 
         expect(mock_writer)
@@ -94,13 +109,21 @@ describe Mobystash::Container do
       it "asks for new logs next time around" do
         allow(mock_writer).to receive(:send_event)
 
-        expect(mock_moby_container)
-          .to receive(:streaming_logs)
-          .with(timestamps: true, stdout: true, stderr: true, follow: true, tty: false, since: "0.000000000")
-          .and_yield(:stdout, "2009-02-13T23:31:30.987654321Z the first log entry")
-        expect(mock_moby_container)
-          .to receive(:streaming_logs)
-          .with(timestamps: true, stdout: true, stderr: true, follow: true, tty: false, since: "1234567890.987654321")
+        expect(mock_conn)
+          .to receive(:get) do |path, opts, excon_opts|
+            expect(path).to eq("/containers/asdfasdfbasic/logs")
+            expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000")
+            expect(excon_opts).to have_key(:response_block)
+            expect(excon_opts[:response_block]).to be_a(Mobystash::MobyChunkParser)
+
+            excon_opts[:response_block].call("\x01\x00\x00\x00\x00\x00\x00 2009-02-13T23:31:30.987654321Z A", 0, 0)
+          end.ordered.and_return(nil)
+        expect(mock_conn)
+          .to receive(:get)
+          .with("/containers/asdfasdfbasic/logs",
+            { timestamps: true, stdout: true, stderr: true, follow: true, since: "1234567890.987654321" },
+            response_block: instance_of(Mobystash::MobyChunkParser)
+          )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
 
         container.run
@@ -124,19 +147,33 @@ describe Mobystash::Container do
       let(:container_id)   { "asdfasdffiltered" }
 
       it "asks for logs" do
-        expect(mock_moby_container)
-          .to receive(:streaming_logs)
-          .with(timestamps: true, stdout: true, stderr: true, follow: true, tty: false, since: "0.000000000")
+        expect(mock_conn)
+          .to receive(:get)
+          .with("/containers/asdfasdffiltered/logs",
+            { timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000" },
+            response_block: instance_of(Mobystash::MobyChunkParser)
+          )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
 
         container.run
       end
 
       it "forwards logs not matching the regex" do
-        expect(mock_moby_container)
-          .to receive(:streaming_logs)
-          .with(timestamps: true, stdout: true, stderr: true, follow: true, tty: false, since: "0.000000000")
-          .and_yield(:stdout, "2018-10-02T08:39:16.458228203Z A")
+        expect(mock_conn)
+          .to receive(:get) do |path, opts, excon_opts|
+            expect(path).to eq("/containers/asdfasdffiltered/logs")
+            expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000")
+            expect(excon_opts).to have_key(:response_block)
+            expect(excon_opts[:response_block]).to be_a(Mobystash::MobyChunkParser)
+
+            excon_opts[:response_block].call("\x01\x00\x00\x00\x00\x00\x00 2018-10-02T08:39:16.458228203Z A", 0, 0)
+          end.ordered.and_return(nil)
+        expect(mock_conn)
+          .to receive(:get)
+          .with("/containers/asdfasdffiltered/logs",
+            { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228203" },
+            response_block: instance_of(Mobystash::MobyChunkParser)
+          )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
 
         expect(mock_writer)
@@ -162,10 +199,21 @@ describe Mobystash::Container do
       end
 
       it "doesn't forward logs matching the filter regex" do
-        expect(mock_moby_container)
-          .to receive(:streaming_logs)
-          .with(timestamps: true, stdout: true, stderr: true, follow: true, tty: false, since: "0.000000000")
-          .and_yield(:stdout, "2018-10-02T08:39:16.458228203Z Z")
+        expect(mock_conn)
+          .to receive(:get) do |path, opts, excon_opts|
+            expect(path).to eq("/containers/asdfasdffiltered/logs")
+            expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000")
+            expect(excon_opts).to have_key(:response_block)
+            expect(excon_opts[:response_block]).to be_a(Mobystash::MobyChunkParser)
+
+            excon_opts[:response_block].call("\x01\x00\x00\x00\x00\x00\x00 2018-10-02T08:39:16.458228203Z Z", 0, 0)
+          end.ordered.and_return(nil)
+        expect(mock_conn)
+          .to receive(:get)
+          .with("/containers/asdfasdffiltered/logs",
+            { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228203" },
+            response_block: instance_of(Mobystash::MobyChunkParser)
+          )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
 
         expect(mock_writer).to_not receive(:send_event)
@@ -179,20 +227,32 @@ describe Mobystash::Container do
       let(:container_id)   { "asdfasdftagged" }
 
       it "asks for logs" do
-        expect(mock_moby_container)
-          .to receive(:streaming_logs)
-          .with(timestamps: true, stdout: true, stderr: true, follow: true, tty: false, since: "0.000000000")
-          .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
+        expect(mock_conn)
+          .to receive(:get)
+          .with("/containers/asdfasdftagged/logs",
+            { timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000" },
+            response_block: instance_of(Mobystash::MobyChunkParser)
+          ).and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
 
         container.run
       end
 
       it "sends events with the extra tags" do
-        expect(mock_moby_container)
-          .to receive(:streaming_logs)
-          .with(timestamps: true, stdout: true, stderr: true, follow: true, tty: false, since: "0.000000000")
-          .and_yield(:stdout, "2018-10-02T08:39:16.458228203Z A")
-          .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
+        expect(mock_conn)
+          .to receive(:get) do |path, opts, excon_opts|
+            expect(path).to eq("/containers/asdfasdftagged/logs")
+            expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000")
+            expect(excon_opts).to have_key(:response_block)
+            expect(excon_opts[:response_block]).to be_a(Mobystash::MobyChunkParser)
+
+            excon_opts[:response_block].call("\x01\x00\x00\x00\x00\x00\x00 2018-10-02T08:39:16.458228203Z A", 0, 0)
+          end.ordered.and_return(nil)
+        expect(mock_conn)
+          .to receive(:get)
+          .with("/containers/asdfasdftagged/logs",
+            { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228203" },
+            response_block: instance_of(Mobystash::MobyChunkParser)
+          ).ordered.and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
 
         expect(mock_writer)
           .to receive(:send_event)
@@ -230,40 +290,20 @@ describe Mobystash::Container do
         allow(mock_moby_container).to receive(:info).and_return("Config" => { "Tty" => true })
       end
 
-      it "asks for logs" do
-        expect(mock_moby_container)
-          .to receive(:streaming_logs)
-          .with(timestamps: true, stdout: true, stderr: true, follow: true, tty: true, since: "0.000000000")
-          .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
+      it "asks for a pro-TTY chunk parser" do
+        expect(Mobystash::MobyChunkParser).to receive(:new).with(tty: true).and_call_original
 
         container.run
       end
 
-      it "handles the deranged argument order" do
-        expect(mock_moby_container)
-          .to receive(:streaming_logs)
-          .with(timestamps: true, stdout: true, stderr: true, follow: true, tty: true, since: "0.000000000")
-          .and_yield("2018-10-02T08:39:16.458228203Z tee tee whyyyyyy!", nil)
-          .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
-
-        expect(mock_writer)
-          .to receive(:send_event)
-          .with(
-            message:      "tee tee whyyyyyy!",
-            moby:         {
-              name:     "tty_container",
-              id:       "asdfasdftty",
-              hostname: "tty-container",
-              image:    "rspec/tty_container:latest",
-              image_id: "poiuytrewqtty",
-              stream:   "tty",
-            },
-            "@timestamp": "2018-10-02T08:39:16.458228203Z",
-            "@metadata":  {
-              document_id: match(DOC_ID_REGEX),
-              event_type:  "moby",
-            },
+      it "asks for logs" do
+        expect(mock_conn)
+          .to receive(:get)
+          .with("/containers/asdfasdftty/logs",
+            { timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000" },
+            response_block: instance_of(Mobystash::MobyChunkParser)
           )
+          .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
 
         container.run
       end
@@ -295,7 +335,7 @@ describe Mobystash::Container do
 
       before :each do
         expect(Docker::Container)
-          .to receive(:get)
+          .to receive(:get).exactly(:once)
           .and_raise(Docker::Error::NotFoundError)
       end
 
