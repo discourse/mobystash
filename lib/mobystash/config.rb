@@ -17,7 +17,8 @@ module Mobystash
 
     attr_reader :read_event_exception_counter,
                 :log_entries_read_counter,
-                :log_entries_sent_counter
+                :log_entries_sent_counter,
+                :last_log_entry_at
 
     # Create a new Mobystash system config based on environment variables.
     #
@@ -47,6 +48,7 @@ module Mobystash
       @read_event_exception_counter = @metrics_registry.counter(:mobystash_moby_read_exceptions_total, "Exception counts while attempting to read log entries from the Moby server")
       @log_entries_read_counter     = @metrics_registry.counter(:mobystash_log_entries_read_total, "How many log entries have been received from Moby")
       @log_entries_sent_counter     = @metrics_registry.counter(:mobystash_log_entries_sent_total, "How many log entries have been sent to the LogstashWriter")
+      @last_log_entry_at            = @metrics_registry.gauge(:mobystash_last_log_entry_at_seconds, "The time at which the last log entry was timestamped")
     end
 
     private

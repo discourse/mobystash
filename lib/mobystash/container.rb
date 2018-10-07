@@ -102,14 +102,13 @@ module Mobystash
         @logger.debug(progname) { "Capturing logs since #{@last_log_timestamp}" }
 
         begin
-          c = Docker::Container.get(@id, {}, conn)
           # The implementation of Docker::Container#streaming_logs has a
           # *terribad* memory leak, in that every log entry that gets received
           # gets stored in a couple of arrays, which only gets cleared when
           # the call to #streaming_logs finishes... which is bad, because
           # we like these to go on for a long time.  So, instead, we need to
           # do our own thing directly, by hand.
-          chunk_parser = Mobystash::MobyChunkParser.new(tty: c.info["Config"]["Tty"]) do |msg, s|
+          chunk_parser = Mobystash::MobyChunkParser.new(tty: tty?(conn)) do |msg, s|
             send_event(msg, s)
           end
 
@@ -142,6 +141,10 @@ module Mobystash
       @config.log_entries_read_counter.increment(container_name: @name, container_id: @id, stream: stream)
 
       @last_log_timestamp, msg = msg.chomp.split(' ', 2)
+      @config.last_log_entry_at.set(
+        { container_name: @name, container_id: @id, stream: stream.to_s },
+        Time.strptime(@last_log_timestamp, "%FT%T.%N%Z").to_f
+      )
       unless @filter_regex && @filter_regex =~ msg
         event = {
           message: msg,
@@ -164,6 +167,10 @@ module Mobystash
         @config.logstash_writer.send_event(event)
         @config.log_entries_sent_counter.increment(container_name: @name, container_id: @id, stream: stream)
       end
+    end
+
+    def tty?(conn)
+      @tty ||= Docker::Container.get(@id, {}, conn).info["Config"]["Tty"]
     end
   end
 end

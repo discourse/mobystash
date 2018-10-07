@@ -38,7 +38,7 @@ module Mobystash
     #
     # This is what Excon use to feed us chunks.
     #
-    # @param s [String] the chunk itself.
+    # @param c [String] the chunk itself.
     # @param r [Integer] ignored.
     # @param t [Integer] ignored.
     #
