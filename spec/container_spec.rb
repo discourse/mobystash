@@ -59,6 +59,7 @@ describe Mobystash::Container do
           .to receive(:get)
           .with("/containers/asdfasdfbasic/logs",
             { timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000" },
+            idempotent:     false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
@@ -73,6 +74,7 @@ describe Mobystash::Container do
             expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000")
             expect(excon_opts).to have_key(:response_block)
             expect(excon_opts[:response_block]).to be_a(Mobystash::MobyChunkParser)
+            expect(excon_opts[:idempotent]).to be(false)
 
             excon_opts[:response_block].call("\x01\x00\x00\x00\x00\x00\x00$2018-10-02T08:39:16.458228203Z xyzzy", 0, 0)
           end.ordered.and_return(nil)
@@ -80,6 +82,7 @@ describe Mobystash::Container do
           .to receive(:get)
           .with("/containers/asdfasdfbasic/logs",
             { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228203" },
+            idempotent:     false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
@@ -115,6 +118,7 @@ describe Mobystash::Container do
             expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000")
             expect(excon_opts).to have_key(:response_block)
             expect(excon_opts[:response_block]).to be_a(Mobystash::MobyChunkParser)
+            expect(excon_opts[:idempotent]).to be(false)
 
             excon_opts[:response_block].call("\x01\x00\x00\x00\x00\x00\x00 2009-02-13T23:31:30.987654321Z A", 0, 0)
           end.ordered.and_return(nil)
@@ -122,6 +126,7 @@ describe Mobystash::Container do
           .to receive(:get)
           .with("/containers/asdfasdfbasic/logs",
             { timestamps: true, stdout: true, stderr: true, follow: true, since: "1234567890.987654321" },
+            idempotent:     false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
@@ -151,6 +156,7 @@ describe Mobystash::Container do
           .to receive(:get)
           .with("/containers/asdfasdffiltered/logs",
             { timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000" },
+            idempotent:     false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
@@ -165,6 +171,7 @@ describe Mobystash::Container do
             expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000")
             expect(excon_opts).to have_key(:response_block)
             expect(excon_opts[:response_block]).to be_a(Mobystash::MobyChunkParser)
+            expect(excon_opts[:idempotent]).to be(false)
 
             excon_opts[:response_block].call("\x01\x00\x00\x00\x00\x00\x00 2018-10-02T08:39:16.458228203Z A", 0, 0)
           end.ordered.and_return(nil)
@@ -172,6 +179,7 @@ describe Mobystash::Container do
           .to receive(:get)
           .with("/containers/asdfasdffiltered/logs",
             { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228203" },
+            idempotent:     false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
@@ -205,6 +213,7 @@ describe Mobystash::Container do
             expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000")
             expect(excon_opts).to have_key(:response_block)
             expect(excon_opts[:response_block]).to be_a(Mobystash::MobyChunkParser)
+            expect(excon_opts[:idempotent]).to be(false)
 
             excon_opts[:response_block].call("\x01\x00\x00\x00\x00\x00\x00 2018-10-02T08:39:16.458228203Z Z", 0, 0)
           end.ordered.and_return(nil)
@@ -212,6 +221,7 @@ describe Mobystash::Container do
           .to receive(:get)
           .with("/containers/asdfasdffiltered/logs",
             { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228203" },
+            idempotent:     false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
@@ -231,6 +241,7 @@ describe Mobystash::Container do
           .to receive(:get)
           .with("/containers/asdfasdftagged/logs",
             { timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000" },
+            idempotent:     false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           ).and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
 
@@ -244,6 +255,7 @@ describe Mobystash::Container do
             expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000")
             expect(excon_opts).to have_key(:response_block)
             expect(excon_opts[:response_block]).to be_a(Mobystash::MobyChunkParser)
+            expect(excon_opts[:idempotent]).to be(false)
 
             excon_opts[:response_block].call("\x01\x00\x00\x00\x00\x00\x00 2018-10-02T08:39:16.458228203Z A", 0, 0)
           end.ordered.and_return(nil)
@@ -251,6 +263,7 @@ describe Mobystash::Container do
           .to receive(:get)
           .with("/containers/asdfasdftagged/logs",
             { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228203" },
+            idempotent:     false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           ).ordered.and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
 
@@ -301,6 +314,7 @@ describe Mobystash::Container do
           .to receive(:get)
           .with("/containers/asdfasdftty/logs",
             { timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000" },
+            idempotent:     false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))

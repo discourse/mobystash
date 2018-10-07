@@ -121,6 +121,7 @@ module Mobystash
               stdout:     true,
               stderr:     true,
             },
+            idempotent:     false,
             response_block: chunk_parser
           )
         rescue Docker::Error::NotFoundError
