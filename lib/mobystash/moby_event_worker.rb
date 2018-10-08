@@ -80,22 +80,28 @@ module Mobystash
     # Main action loop, runs in current thread.  If you want to run this in
     # the background, look at #run! instead.
     def run
-      conn = Docker::Connection.new(docker_host, read_timeout: 3600)
+      Thread.handle_interrupt(Exception => :never) do
+        begin
+          Thread.handle_interrupt(Exception => :immediate) do
+            conn = Docker::Connection.new(docker_host, read_timeout: 3600)
 
-      loop { process_events(conn) }
-    rescue TerminateEventWorker
-      # See ya!
-    rescue Docker::Error::TimeoutError
-      retry
-    rescue Excon::Error::Socket => ex
-      log_exception(ex, :debug) { "Got socket error while listening for events" }
-      sleep 1
-      retry
-    rescue StandardError => ex
-      log_exception(ex) { "Event runner raised exception" }
-      event_exception(ex)
-      sleep 1
-      retry
+            loop { process_events(conn) }
+          end
+        rescue TerminateEventWorker
+          # See ya!
+        rescue Docker::Error::TimeoutError
+          retry
+        rescue Excon::Error::Socket => ex
+          log_exception(ex, :debug) { "Got socket error while listening for events" }
+          sleep 1
+          retry
+        rescue StandardError => ex
+          log_exception(ex) { "Event runner raised exception" }
+          event_exception(ex)
+          sleep 1
+          retry
+        end
+      end
     end
 
     # Async stuff is a right shit to test, and frankly the sorts of bugs that
@@ -107,13 +113,17 @@ module Mobystash
         return if @event_worker_thread
 
         @event_worker_thread = Thread.new do
-          @logger.debug(progname) { "MobyEventWorker thread #{Thread.current.object_id} starting" }
-          begin
-            self.run
-          rescue Exception => ex
-            log_exception(ex) { "MobyEventWorker thread #{Thread.current.object_id} received fatal exception" }
-          else
-            @logger.debug(progname) { "MobyEventWorker thread #{Thread.current.object_id} terminating" }
+          Thread.handle_interrupt(Exception => :never) do
+            @logger.debug(progname) { "MobyEventWorker thread #{Thread.current.object_id} starting" }
+            begin
+              Thread.handle_interrupt(Exception => :immediate) do
+                self.run
+              end
+            rescue Exception => ex
+              log_exception(ex) { "MobyEventWorker thread #{Thread.current.object_id} received fatal exception" }
+            else
+              @logger.debug(progname) { "MobyEventWorker thread #{Thread.current.object_id} terminating" }
+            end
           end
         end
       end
