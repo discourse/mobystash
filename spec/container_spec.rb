@@ -58,7 +58,7 @@ describe Mobystash::Container do
         expect(mock_conn)
           .to receive(:get)
           .with("/containers/asdfasdfbasic/logs",
-            { timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000" },
+            { timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000001" },
             idempotent:     false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
@@ -71,7 +71,7 @@ describe Mobystash::Container do
         expect(mock_conn)
           .to receive(:get) do |path, opts, excon_opts|
             expect(path).to eq("/containers/asdfasdfbasic/logs")
-            expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000")
+            expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000001")
             expect(excon_opts).to have_key(:response_block)
             expect(excon_opts[:response_block]).to be_a(Mobystash::MobyChunkParser)
             expect(excon_opts[:idempotent]).to be(false)
@@ -81,7 +81,7 @@ describe Mobystash::Container do
         expect(mock_conn)
           .to receive(:get)
           .with("/containers/asdfasdfbasic/logs",
-            { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228203" },
+            { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228204" },
             idempotent:     false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
@@ -115,7 +115,7 @@ describe Mobystash::Container do
         expect(mock_conn)
           .to receive(:get) do |path, opts, excon_opts|
             expect(path).to eq("/containers/asdfasdfbasic/logs")
-            expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000")
+            expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000001")
             expect(excon_opts).to have_key(:response_block)
             expect(excon_opts[:response_block]).to be_a(Mobystash::MobyChunkParser)
             expect(excon_opts[:idempotent]).to be(false)
@@ -125,7 +125,7 @@ describe Mobystash::Container do
         expect(mock_conn)
           .to receive(:get)
           .with("/containers/asdfasdfbasic/logs",
-            { timestamps: true, stdout: true, stderr: true, follow: true, since: "1234567890.987654321" },
+            { timestamps: true, stdout: true, stderr: true, follow: true, since: "1234567890.987654322" },
             idempotent:     false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
@@ -155,7 +155,7 @@ describe Mobystash::Container do
         expect(mock_conn)
           .to receive(:get)
           .with("/containers/asdfasdffiltered/logs",
-            { timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000" },
+            { timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000001" },
             idempotent:     false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
@@ -168,7 +168,7 @@ describe Mobystash::Container do
         expect(mock_conn)
           .to receive(:get) do |path, opts, excon_opts|
             expect(path).to eq("/containers/asdfasdffiltered/logs")
-            expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000")
+            expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000001")
             expect(excon_opts).to have_key(:response_block)
             expect(excon_opts[:response_block]).to be_a(Mobystash::MobyChunkParser)
             expect(excon_opts[:idempotent]).to be(false)
@@ -178,7 +178,7 @@ describe Mobystash::Container do
         expect(mock_conn)
           .to receive(:get)
           .with("/containers/asdfasdffiltered/logs",
-            { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228203" },
+            { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228204" },
             idempotent:     false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
@@ -210,7 +210,7 @@ describe Mobystash::Container do
         expect(mock_conn)
           .to receive(:get) do |path, opts, excon_opts|
             expect(path).to eq("/containers/asdfasdffiltered/logs")
-            expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000")
+            expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000001")
             expect(excon_opts).to have_key(:response_block)
             expect(excon_opts[:response_block]).to be_a(Mobystash::MobyChunkParser)
             expect(excon_opts[:idempotent]).to be(false)
@@ -220,7 +220,7 @@ describe Mobystash::Container do
         expect(mock_conn)
           .to receive(:get)
           .with("/containers/asdfasdffiltered/logs",
-            { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228203" },
+            { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228204" },
             idempotent:     false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
@@ -240,7 +240,7 @@ describe Mobystash::Container do
         expect(mock_conn)
           .to receive(:get)
           .with("/containers/asdfasdftagged/logs",
-            { timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000" },
+            { timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000001" },
             idempotent:     false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           ).and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
@@ -252,7 +252,7 @@ describe Mobystash::Container do
         expect(mock_conn)
           .to receive(:get) do |path, opts, excon_opts|
             expect(path).to eq("/containers/asdfasdftagged/logs")
-            expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000")
+            expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000001")
             expect(excon_opts).to have_key(:response_block)
             expect(excon_opts[:response_block]).to be_a(Mobystash::MobyChunkParser)
             expect(excon_opts[:idempotent]).to be(false)
@@ -262,7 +262,7 @@ describe Mobystash::Container do
         expect(mock_conn)
           .to receive(:get)
           .with("/containers/asdfasdftagged/logs",
-            { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228203" },
+            { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228204" },
             idempotent:     false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           ).ordered.and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
@@ -313,7 +313,7 @@ describe Mobystash::Container do
         expect(mock_conn)
           .to receive(:get)
           .with("/containers/asdfasdftty/logs",
-            { timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000000" },
+            { timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000001" },
             idempotent:     false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )

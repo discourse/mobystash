@@ -9,6 +9,12 @@ module Mobystash
   # Hoovers up logs for a single container and passes them on to the writer.
   class Container
     include Mobystash::MobyEventWorker
+    
+    # This is needed because floats are terribad at this level of precision,
+    # and it works because Time happens to be based on Rational.
+    #
+    ONE_NANOSECOND = Rational('1/1000000000')
+    private_constant :ONE_NANOSECOND
 
     # docker_data is the Docker::Container instance representing the moby
     # container metadata, and system_config is the Mobystash::Config.
@@ -115,7 +121,7 @@ module Mobystash
           conn.get(
             "/containers/#{@id}/logs",
             {
-              since:      Time.strptime(@last_log_timestamp, "%FT%T.%N%Z").strftime("%s.%N"),
+              since:      (Time.strptime(@last_log_timestamp, "%FT%T.%N%Z") + ONE_NANOSECOND).strftime("%s.%N"),
               timestamps: true,
               follow:     true,
               stdout:     true,
