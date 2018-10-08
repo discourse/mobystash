@@ -13,7 +13,7 @@ GEM
     excon (0.59.0)
     ffi (1.9.25)
     formatador (0.2.5)
-    frankenstein (1.1.0)
+    frankenstein (1.1.1)
       prometheus-client (= 0.8.0)
       rack (~> 2.0)
     guard (2.14.1)
