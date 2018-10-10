@@ -9,7 +9,7 @@ module Mobystash
   # Hoovers up logs for a single container and passes them on to the writer.
   class Container
     include Mobystash::MobyEventWorker
-    
+
     # This is needed because floats are terribad at this level of precision,
     # and it works because Time happens to be based on Rational.
     #
