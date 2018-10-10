@@ -298,3 +298,44 @@ retrieves the metrics you're looking at.
   server resulted in an unhandled exception being raised, labelled by
   exception class.  This should never have a non-zero number anywhere around
   it.
+
+
+# Development
+
+Please maintain 100% code/doc coverage and rubocop-enforced code style in all
+changes.  Running `rake` will report rubocop offences and code/doc coverage
+stats as well as running test suite.
+
+Patches can be sent as [a Github pull
+request](https://github.com/discourse/loggerstash).  This project is
+intended to be a safe, welcoming space for collaboration, and contributors
+are expected to adhere to the [Contributor Covenant code of
+conduct](CODE_OF_CONDUCT.md).
+
+
+## Deployment
+
+The canonical distribution unit is the Moby container image.  Run `rake
+docker:build` to make a local container for testing, and `rake
+docker:publish` to build and push a container image to
+`discourse/mobystash:latest`.
+
+
+# Licence
+
+Unless otherwise stated, everything in this repo is covered by the following
+copyright notice:
+
+    Copyright (C) 2018  Civilized Discourse Construction Kit, Inc.
+
+    This program is free software: you can redistribute it and/or modify it
+    under the terms of the GNU General Public License version 3, as
+    published by the Free Software Foundation.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
