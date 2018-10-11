@@ -165,6 +165,26 @@ forwarded to logstash.  For example, to drop any log entry starting with
     --label org.discourse.mobystash.filter_regex='\ADEBUG|wakkawakka'
 
 
+## Parsing syslog messages
+
+If a program in your container happens to be limited to using syslog as a
+logging mechanism, mobystash has you covered!
+
+First, you can cause all messages intended for syslog to instead be printed
+to stderr by running something like this in your container, before you start
+the main program:
+
+    /usr/bin/socat UNIX-RECV:/dev/log,mode=0666 stderr &
+
+Then, put the following label onto the container:
+
+    --label org.discourse.mobystash.parse_syslog=yes
+
+This will cause mobystash to parse all log messages which begin with the
+syslog priority/facility specifier `<NN>` as syslog messages, and add a
+`syslog` block of tags to the event sent to logstash.
+
+
 ## Tagging logstash events
 
 Since logstash events are JSON objects, you can add arbitrary metadata to

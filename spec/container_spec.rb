@@ -133,6 +133,48 @@ describe Mobystash::Container do
 
         container.run
       end
+
+      it "takes no notice of 'syslog style' messages" do
+        expect(mock_conn)
+          .to receive(:get) do |path, opts, excon_opts|
+            expect(path).to eq("/containers/asdfasdfbasic/logs")
+            expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000001")
+            expect(excon_opts).to have_key(:response_block)
+            expect(excon_opts[:response_block]).to be_a(Mobystash::MobyChunkParser)
+            expect(excon_opts[:idempotent]).to be(false)
+
+            excon_opts[:response_block].call("\x02\x00\x00\x00\x00\x00\x00Z2018-10-02T08:39:16.458228203Z <150>Oct 11 10:10:35 sumhost ohai[3656]: hello from syslog!", 0, 0)
+          end.exactly(:once)
+        expect(mock_conn)
+          .to receive(:get)
+          .with("/containers/asdfasdfbasic/logs",
+            { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228204" },
+            idempotent:     false,
+            response_block: instance_of(Mobystash::MobyChunkParser)
+          )
+          .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
+
+        expect(mock_writer)
+          .to receive(:send_event)
+          .with(
+            message:      "<150>Oct 11 10:10:35 sumhost ohai[3656]: hello from syslog!",
+            moby:         {
+              name:     "basic_container",
+              id:       "asdfasdfbasic",
+              hostname: "basic-container",
+              image:    "rspec/basic_container:latest",
+              image_id: "poiuytrewqbasic",
+              stream:   "stderr",
+            },
+            "@timestamp": "2018-10-02T08:39:16.458228203Z",
+            "@metadata":  {
+              document_id: match(DOC_ID_REGEX),
+              event_type:  "moby",
+            },
+          )
+
+        container.run
+      end
     end
 
     context "mobystash-disabled container" do
@@ -318,6 +360,254 @@ describe Mobystash::Container do
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
+
+        container.run
+      end
+    end
+
+    context "syslog-enabled container" do
+      let(:container_name) { "syslog_container" }
+      let(:container_id)   { "asdfasdfsyslog" }
+
+      it "relays non-syslog entries without modification" do
+        expect(mock_conn)
+          .to receive(:get) do |path, opts, excon_opts|
+            expect(path).to eq("/containers/asdfasdfsyslog/logs")
+            expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000001")
+            expect(excon_opts).to have_key(:response_block)
+            expect(excon_opts[:response_block]).to be_a(Mobystash::MobyChunkParser)
+            expect(excon_opts[:idempotent]).to be(false)
+
+            excon_opts[:response_block].call("\x02\x00\x00\x00\x00\x00\x00 2018-10-02T08:39:16.458228203Z A", 0, 0)
+          end.ordered.and_return(nil)
+        expect(mock_conn)
+          .to receive(:get)
+          .with("/containers/asdfasdfsyslog/logs",
+            { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228204" },
+            idempotent:     false,
+            response_block: instance_of(Mobystash::MobyChunkParser)
+          )
+          .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
+
+        expect(mock_writer)
+          .to receive(:send_event)
+          .with(
+            message:      "A",
+            moby:         {
+              name:     "syslog_container",
+              id:       "asdfasdfsyslog",
+              hostname: "syslog-container",
+              image:    "rspec/syslog_container:latest",
+              image_id: "poiuytrewqsyslog",
+              stream:   "stderr",
+            },
+            "@timestamp": "2018-10-02T08:39:16.458228203Z",
+            "@metadata":  {
+              document_id: match(DOC_ID_REGEX),
+              event_type:  "moby",
+            },
+          )
+
+        container.run
+      end
+
+      it "relays syslog entries with syslog tags" do
+        expect(mock_conn)
+          .to receive(:get) do |path, opts, excon_opts|
+            expect(path).to eq("/containers/asdfasdfsyslog/logs")
+            expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000001")
+            expect(excon_opts).to have_key(:response_block)
+            expect(excon_opts[:response_block]).to be_a(Mobystash::MobyChunkParser)
+            expect(excon_opts[:idempotent]).to be(false)
+
+            excon_opts[:response_block].call("\x02\x00\x00\x00\x00\x00\x00Z2018-10-02T08:39:16.458228203Z <150>Oct 11 10:10:35 sumhost ohai[3656]: hello from syslog!", 0, 0)
+          end.ordered.and_return(nil)
+        expect(mock_conn)
+          .to receive(:get)
+          .with("/containers/asdfasdfsyslog/logs",
+            { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228204" },
+            idempotent:     false,
+            response_block: instance_of(Mobystash::MobyChunkParser)
+          )
+          .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
+
+        expect(mock_writer)
+          .to receive(:send_event)
+          .with(
+            message:      "hello from syslog!",
+            moby:         {
+              name:     "syslog_container",
+              id:       "asdfasdfsyslog",
+              hostname: "syslog-container",
+              image:    "rspec/syslog_container:latest",
+              image_id: "poiuytrewqsyslog",
+              stream:   "stderr",
+            },
+            syslog:       {
+              severity_id:   6,
+              severity_name: "info",
+              facility_id:   18,
+              facility_name: "local2",
+              hostname:      "sumhost",
+              timestamp:     "Oct 11 10:10:35",
+              program:       "ohai",
+              pid:           3656,
+            },
+            "@timestamp": "2018-10-02T08:39:16.458228203Z",
+            "@metadata":  {
+              document_id: match(DOC_ID_REGEX),
+              event_type:  "moby",
+            },
+          )
+
+        container.run
+      end
+
+      it "relays syslog entries with syslog tags and no program name" do
+        expect(mock_conn)
+          .to receive(:get) do |path, opts, excon_opts|
+            expect(path).to eq("/containers/asdfasdfsyslog/logs")
+            expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000001")
+            expect(excon_opts).to have_key(:response_block)
+            expect(excon_opts[:response_block]).to be_a(Mobystash::MobyChunkParser)
+            expect(excon_opts[:idempotent]).to be(false)
+
+            excon_opts[:response_block].call("\x02\x00\x00\x00\x00\x00\x00N2018-10-02T08:39:16.458228203Z <150>Oct 11 10:10:35 sumhost hello from syslog!", 0, 0)
+          end.ordered.and_return(nil)
+        expect(mock_conn)
+          .to receive(:get)
+          .with("/containers/asdfasdfsyslog/logs",
+            { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228204" },
+            idempotent:     false,
+            response_block: instance_of(Mobystash::MobyChunkParser)
+          )
+          .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
+
+        expect(mock_writer)
+          .to receive(:send_event)
+          .with(
+            message:      "hello from syslog!",
+            moby:         {
+              name:     "syslog_container",
+              id:       "asdfasdfsyslog",
+              hostname: "syslog-container",
+              image:    "rspec/syslog_container:latest",
+              image_id: "poiuytrewqsyslog",
+              stream:   "stderr",
+            },
+            syslog:       {
+              severity_id:   6,
+              severity_name: "info",
+              facility_id:   18,
+              facility_name: "local2",
+              hostname:      "sumhost",
+              timestamp:     "Oct 11 10:10:35",
+            },
+            "@timestamp": "2018-10-02T08:39:16.458228203Z",
+            "@metadata":  {
+              document_id: match(DOC_ID_REGEX),
+              event_type:  "moby",
+            },
+          )
+
+        container.run
+      end
+
+      it "relays syslog entries with syslog tags and no hostname or pid" do
+        expect(mock_conn)
+          .to receive(:get) do |path, opts, excon_opts|
+            expect(path).to eq("/containers/asdfasdfsyslog/logs")
+            expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000001")
+            expect(excon_opts).to have_key(:response_block)
+            expect(excon_opts[:response_block]).to be_a(Mobystash::MobyChunkParser)
+            expect(excon_opts[:idempotent]).to be(false)
+
+            excon_opts[:response_block].call("\x02\x00\x00\x00\x00\x00\x00L2018-10-02T08:39:16.458228203Z <150>Oct 11 10:10:35 ohai: hello from syslog!", 0, 0)
+          end.ordered.and_return(nil)
+        expect(mock_conn)
+          .to receive(:get)
+          .with("/containers/asdfasdfsyslog/logs",
+            { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228204" },
+            idempotent:     false,
+            response_block: instance_of(Mobystash::MobyChunkParser)
+          )
+          .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
+
+        expect(mock_writer)
+          .to receive(:send_event)
+          .with(
+            message:      "hello from syslog!",
+            moby:         {
+              name:     "syslog_container",
+              id:       "asdfasdfsyslog",
+              hostname: "syslog-container",
+              image:    "rspec/syslog_container:latest",
+              image_id: "poiuytrewqsyslog",
+              stream:   "stderr",
+            },
+            syslog:       {
+              severity_id:   6,
+              severity_name: "info",
+              facility_id:   18,
+              facility_name: "local2",
+              timestamp:     "Oct 11 10:10:35",
+              program:       "ohai",
+            },
+            "@timestamp": "2018-10-02T08:39:16.458228203Z",
+            "@metadata":  {
+              document_id: match(DOC_ID_REGEX),
+              event_type:  "moby",
+            },
+          )
+
+        container.run
+      end
+
+      it "relays syslog entries with syslog tags but no recognisable form" do
+        expect(mock_conn)
+          .to receive(:get) do |path, opts, excon_opts|
+            expect(path).to eq("/containers/asdfasdfsyslog/logs")
+            expect(opts).to eq(timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000001")
+            expect(excon_opts).to have_key(:response_block)
+            expect(excon_opts[:response_block]).to be_a(Mobystash::MobyChunkParser)
+            expect(excon_opts[:idempotent]).to be(false)
+
+            excon_opts[:response_block].call("\x02\x00\x00\x00\x00\x00\x00D2018-10-02T08:39:16.458228203Z <150>Oct 11 10:10:35 hellofromsyslog!", 0, 0)
+          end.ordered.and_return(nil)
+        expect(mock_conn)
+          .to receive(:get)
+          .with("/containers/asdfasdfsyslog/logs",
+            { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228204" },
+            idempotent:     false,
+            response_block: instance_of(Mobystash::MobyChunkParser)
+          )
+          .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
+
+        expect(mock_writer)
+          .to receive(:send_event)
+          .with(
+            message:      "hellofromsyslog!",
+            moby:         {
+              name:     "syslog_container",
+              id:       "asdfasdfsyslog",
+              hostname: "syslog-container",
+              image:    "rspec/syslog_container:latest",
+              image_id: "poiuytrewqsyslog",
+              stream:   "stderr",
+            },
+            syslog:       {
+              severity_id:   6,
+              severity_name: "info",
+              facility_id:   18,
+              facility_name: "local2",
+              timestamp:     "Oct 11 10:10:35",
+            },
+            "@timestamp": "2018-10-02T08:39:16.458228203Z",
+            "@metadata":  {
+              document_id: match(DOC_ID_REGEX),
+              event_type:  "moby",
+            },
+          )
 
         container.run
       end

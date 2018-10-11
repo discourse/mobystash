@@ -1,0 +1,9 @@
+Name: syslog_container
+Config:
+  Labels:
+    org.discourse.mobystash.parse_syslog: "yes"
+  Hostname: syslog-container
+  Image: rspec/syslog_container:latest
+Image: poiuytrewqsyslog
+id: asdfasdfsyslog
+

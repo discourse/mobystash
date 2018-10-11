@@ -16,6 +16,36 @@ module Mobystash
     ONE_NANOSECOND = Rational('1/1000000000')
     private_constant :ONE_NANOSECOND
 
+    SYSLOG_FACILITIES = %w{
+      kern
+      user
+      mail
+      daemon
+      auth
+      syslog
+      lpr
+      news
+      uucp
+      cron
+      authpriv
+      ftp
+      reserved12 reserved13 reserved14 reserved15
+      local0 local1 local2 local3 local4 local5 local6 local7
+    }
+
+    SYSLOG_SEVERITIES = %w{
+      emerg
+      alert
+      crit
+      err
+      warning
+      notice
+      info
+      debug
+    }
+
+    private_constant :SYSLOG_FACILITIES, :SYSLOG_SEVERITIES
+
     # docker_data is the Docker::Container instance representing the moby
     # container metadata, and system_config is the Mobystash::Config.
     #
@@ -29,6 +59,8 @@ module Mobystash
       @name = (docker_data.info["Name"] || docker_data.info["Names"].first).sub(/\A\//, '')
 
       @capture_logs = true
+      @parse_syslog = false
+
       @tags = {
         moby: {
           name:     @name,
@@ -75,7 +107,7 @@ module Mobystash
         case lbl
         when "org.discourse.mobystash.disable"
           @logger.debug(progname) { "Found disable label, value: #{val.inspect}" }
-          @capture_logs = !(val =~ /\Ayes|1|on|true\z/i)
+          @capture_logs = !(val =~ /\Ayes|y|1|on|true|t\z/i)
           @logger.debug(progname) { "@capture_logs is now #{@capture_logs.inspect}" }
         when "org.discourse.mobystash.filter_regex"
           @logger.debug(progname) { "Found filter_regex label, value: #{val.inspect}" }
@@ -84,6 +116,9 @@ module Mobystash
           @logger.debug(progname) { "Found tag label #{$1}, value: #{val.inspect}" }
           @tags.deep_merge!(hashify_tag($1, val))
           @logger.debug(progname) { "Container tags is now #{@tags.inspect}" }
+        when "org.discourse.mobystash.parse_syslog"
+          @logger.debug(progname) { "Found parse_syslog label, value: #{val.inspect}" }
+          @parse_syslog = !!(val =~ /\Ayes|y|1|on|true|t\z/i)
         end
       end
     end
@@ -152,6 +187,13 @@ module Mobystash
         { container_name: @name, container_id: @id, stream: stream.to_s },
         Time.strptime(@last_log_timestamp, "%FT%T.%N%Z").to_f
       )
+
+      msg, syslog_fields = if @parse_syslog
+        parse_syslog(msg)
+      else
+        [msg, {}]
+      end
+
       unless @filter_regex && @filter_regex =~ msg
         event = {
           message: msg,
@@ -159,7 +201,7 @@ module Mobystash
           moby: {
             stream: stream.to_s,
           },
-        }.deep_merge!(@tags)
+        }.deep_merge(syslog_fields).deep_merge!(@tags)
 
         # Can't calculate the document_id until you've got a constructed event...
         metadata = {
@@ -173,6 +215,47 @@ module Mobystash
 
         @config.logstash_writer.send_event(event)
         @config.log_entries_sent_counter.increment(container_name: @name, container_id: @id, stream: stream)
+      end
+    end
+
+    def parse_syslog(msg)
+      if msg =~ /\A<(\d+)>(\w{3} [ 0-9]{2} [0-9:]{8}) (.*)\z/
+        flags     = $1.to_i
+        timestamp = $2
+        content   = $3
+
+        # Lo! the many ways that syslog messages can be formatted
+        hostname, program, pid, message =
+        case content
+        # the gold standard: hostname, program name with optional PID
+        when /^([a-zA-Z0-9._-]*[^:]) (\S+?)(\[(\d+)\])?: (.*)$/
+          [$1, $2, $4, $5]
+        # hostname, no program name
+        when /^([a-zA-Z0-9._-]+) (\S+[^:] .*)$/
+          [$1, nil, nil, $2]
+        # program name, no hostname (yeah, you heard me, non-RFC compliant!)
+        when /^(\S+?)(\[(\d+)\])?: (.*)$/
+          [nil, $1, $3, $4]
+        else
+          # I have NFI
+          [nil, nil, nil, content]
+        end
+
+        severity = flags % 8
+        facility = flags / 8
+
+        [message, { syslog: {
+          timestamp:     timestamp,
+          severity_id:   severity,
+          severity_name: SYSLOG_SEVERITIES[severity],
+          facility_id:   facility,
+          facility_name: SYSLOG_FACILITIES[facility],
+          hostname:      hostname,
+          program:       program,
+          pid:           pid.nil? ? nil : pid.to_i,
+        }.select { |k, v| !v.nil? } }]
+      else
+        [msg, {}]
       end
     end
 
