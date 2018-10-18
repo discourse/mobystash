@@ -113,6 +113,8 @@ module Mobystash
         return if @event_worker_thread
 
         @event_worker_thread = Thread.new do
+          Thread.current.name = progname
+
           Thread.handle_interrupt(Exception => :never) do
             @logger.debug(progname) { "MobyEventWorker thread #{Thread.current.object_id} starting" }
             begin

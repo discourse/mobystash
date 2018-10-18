@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+Thread.current.name = "main"
+
 if ENV['RUBY_TRACE_ALLOCATIONS'] == "yep"
   require 'objspace'
 
@@ -51,6 +53,8 @@ begin
   system = Mobystash::System.new(ENV, logger: logger)
 
   Thread.new do
+    Thread.current.name = "SignalHandler"
+
     loop do
       begin
         c = sig_r.getc

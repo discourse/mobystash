@@ -36,6 +36,10 @@ module Mobystash
 
     # Start everything up!
     def run
+      Thread.current.name = progname
+
+      @logger.info(progname) { "Starting Mobystash::System" }
+
       @watcher.run!
       @config.logstash_writer.run
 
