@@ -40,7 +40,7 @@ GEM
       ruby_dep (~> 1.2)
     loggerstash (0.0.5)
       logstash_writer (~> 0.0)
-    logstash_writer (0.0.9)
+    logstash_writer (0.0.10)
       prometheus-client (= 0.8.0)
     lumberjack (1.0.12)
     method_source (0.8.2)
