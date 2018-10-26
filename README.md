@@ -213,7 +213,7 @@ This will be transformed into a nested object, like so:
 
 There are a number of pre-defined tags that every event sent to logstash will
 include.  Any per-container tags you set via labels will override the
-default values.  The pre-defined tags cannot be removed, only modified.
+default values.  The pre-defined tags cannot be removed, only overridden.
 
 * `moby.name` -- the name of the container that emitted the log entry.
 * `moby.id` -- the full hex ID of the container that emitted the log
@@ -227,10 +227,11 @@ default values.  The pre-defined tags cannot be removed, only modified.
   the log entry was sent over.
 * `@timestamp` -- the time at which the log entry was received by the Moby
   daemon.
-* `@metadata._id` -- a pseudorandom identifying string; this allows
-  logstash/elasticsearch to de-duplicate log entries if required.
-* `@metadata._type` -- set to "moby" by default; allows logstash to process
-  and/or index these logs differently to others
+* `@metadata.document_id` -- a string generated based on the contents of
+  the log entry; this allows logstash/elasticsearch to de-duplicate log
+  entries if required.
+* `@metadata.event_type` -- set to "moby" by default; allows logstash to
+  process and/or index these logs differently to others
 * `message` -- the full message string provided in the log entry.
 
 
