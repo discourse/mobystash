@@ -72,10 +72,17 @@ module Mobystash
       }
 
       @last_log_timestamp = Time.at(0).utc.strftime("%FT%T.%NZ")
+      @llt_mutex = Mutex.new
 
       parse_labels(docker_data.info["Config"]["Labels"])
 
       super
+    end
+
+    # The timestamp, in RFC3339 format, of the last log message which was
+    # received by this container.
+    def last_log_timestamp
+      @llt_mutex.synchronize { @last_log_timestamp }
     end
 
     private
@@ -182,7 +189,10 @@ module Mobystash
     def send_event(msg, stream)
       @config.log_entries_read_counter.increment(container_name: @name, container_id: @id, stream: stream)
 
-      @last_log_timestamp, msg = msg.chomp.split(' ', 2)
+      @llt_mutex.synchronize do
+        @last_log_timestamp, msg = msg.chomp.split(' ', 2)
+      end
+
       @config.last_log_entry_at.set(
         { container_name: @name, container_id: @id, stream: stream.to_s },
         Time.strptime(@last_log_timestamp, "%FT%T.%N%Z").to_f

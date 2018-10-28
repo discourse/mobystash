@@ -14,10 +14,12 @@ describe Mobystash::Container do
     }
   end
 
-  let(:mock_writer) { instance_double(LogstashWriter) }
-  let(:config)      { Mobystash::Config.new(env, logger: logger) }
-  let(:docker_data) { container_fixture(container_name) }
-  let(:container)   { Mobystash::Container.new(docker_data, config) }
+  let(:mock_writer)         { instance_double(LogstashWriter) }
+  let(:config)              { Mobystash::Config.new(env, logger: logger) }
+  let(:docker_data)         { container_fixture(container_name) }
+  let(:container)           { Mobystash::Container.new(docker_data, config) }
+  let(:mock_conn)           { instance_double(Docker::Connection) }
+  let(:mock_moby_container) { instance_double(Docker::Container) }
 
   before :each do
     allow(LogstashWriter).to receive(:new).with(server_name: "speccy", logger: logger, backlog: 1_000_000, metrics_registry: instance_of(Prometheus::Client::Registry)).and_return(mock_writer)
@@ -35,9 +37,6 @@ describe Mobystash::Container do
   end
 
   describe "#run" do
-    let(:mock_conn)           { instance_double(Docker::Connection) }
-    let(:mock_moby_container) { instance_double(Docker::Container) }
-
     before(:each) do
       allow(Docker::Connection).to receive(:new).with("unix:///var/run/docker.sock", read_timeout: 3600).and_return(mock_conn)
       allow(mock_conn).to receive(:get).and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
@@ -648,6 +647,42 @@ describe Mobystash::Container do
 
         container.run
       end
+    end
+  end
+
+  describe "#last_log_timestamp" do
+    let(:container_name)      { "basic_container" }
+    let(:container_id)        { "asdfasdfbasic" }
+
+    before(:each) do
+      allow(Docker::Connection).to receive(:new).with("unix:///var/run/docker.sock", read_timeout: 3600).and_return(mock_conn)
+      allow(Docker::Container).to receive(:new).with(instance_of(Docker::Connection), instance_of(Hash)).and_call_original
+      allow(Docker::Container).to receive(:get).with(container_id, {}, mock_conn).and_return(mock_moby_container)
+      allow(mock_moby_container).to receive(:info).and_return("Config" => { "Tty" => false })
+
+      # I'm a bit miffed we have to do this; to my mind, a double should
+      # lie a little
+      allow(mock_conn).to receive(:is_a?).with(Docker::Connection).and_return(true)
+    end
+
+    it "returns time zero at first" do
+      expect(container.last_log_timestamp).to eq("1970-01-01T00:00:00.000000000Z")
+    end
+
+    it "returns the last log timestamp" do
+      allow(mock_writer).to receive(:send_event)
+
+      expect(mock_conn)
+        .to receive(:get) do |_path, _opts, excon_opts|
+          excon_opts[:response_block].call("\x01\x00\x00\x00\x00\x00\x00 2009-02-13T23:31:30.987654321Z A", 0, 0)
+        end.ordered.and_return(nil)
+      expect(mock_conn)
+        .to receive(:get)
+        .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
+
+      container.run
+
+      expect(container.last_log_timestamp).to eq("2009-02-13T23:31:30.987654321Z")
     end
   end
 end
