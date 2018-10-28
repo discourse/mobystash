@@ -117,6 +117,15 @@ sensible default which works OK in at least some circumstances.
     a webserver will be started on port 9367, which will emit
     [Prometheus](https://prometheus.io/) metric data on `/metrics`.
 
+* **`MOBYSTASH_STATE_FILE`**
+
+    *Default: `"./mobystash_state.dump"`
+
+    The state file contains the timestamp of the most recent log entry seen
+    for each container being monitored.  This allows mobystash to resume
+    logging where it left off after a restart.  It is recommended that you
+    put this state file in a standalone volume, for persistence.
+
 * **`DOCKER_HOST`**
 
     *Default*: `"unix:///var/run/docker.sock"`

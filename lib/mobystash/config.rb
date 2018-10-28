@@ -10,6 +10,7 @@ module Mobystash
 
     attr_reader :logstash_writer,
                 :enable_metrics,
+                :state_file,
                 :docker_host
 
     attr_reader :logger
@@ -65,6 +66,7 @@ module Mobystash
       )
 
       @enable_metrics  = pluck_boolean(env, "MOBYSTASH_ENABLE_METRICS", default: false)
+      @state_file      = pluck_string(env, "MOBYSTASH_STATE_FILE", default: "./mobystash_state.dump")
       @docker_host     = pluck_string(env, "DOCKER_HOST", default: "unix:///var/run/docker.sock")
     end
 

@@ -79,6 +79,32 @@ describe Mobystash::Config do
       end
     end
 
+    context "MOBYSTASH_STATE_FILE" do
+      let(:value) { config.state_file }
+
+      context "by default" do
+        it "is the default value" do
+          expect(value).to eq("./mobystash_state.dump")
+        end
+      end
+
+      context "with an empty string" do
+        let(:env) { base_env.merge("MOBYSTASH_STATE_FILE" => "") }
+
+        it "keeps the default" do
+          expect(value).to eq("./mobystash_state.dump")
+        end
+      end
+
+      context "with a custom value" do
+        let(:env) { base_env.merge("MOBYSTASH_STATE_FILE" => "/mobystash/log_positions") }
+
+        it "stores the alternate value" do
+          expect(value).to eq('/mobystash/log_positions')
+        end
+      end
+    end
+
     context "DOCKER_HOST" do
       let(:value) { config.docker_host }
 
