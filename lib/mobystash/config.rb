@@ -1,4 +1,5 @@
 require 'logger'
+require 'logstash_writer'
 require 'prometheus/client'
 
 module Mobystash

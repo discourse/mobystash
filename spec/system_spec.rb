@@ -244,6 +244,8 @@ describe Mobystash::System do
       allow(Docker::Container).to receive(:all).with({}, mock_conn).and_return([])
       allow(Docker::Container).to receive(:get).with("asdfasdfbasic", {}, mock_conn).and_return(container_fixture("basic_container"))
       allow(Docker::Container).to receive(:get).with("asdfasdfdisabled", {}, mock_conn).and_return(container_fixture("disabled_container"))
+      allow(Mobystash::Container).to receive(:new).and_return(mock = instance_double(Mobystash::Container))
+      allow(mock).to receive(:run!)
     end
 
     it "requests a current container list" do
