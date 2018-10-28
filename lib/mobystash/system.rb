@@ -110,6 +110,16 @@ module Mobystash
     def run_existing_containers
       @logger.info(progname) { "Collecting logs for existing containers" }
 
+      state_data = begin
+        Marshal.load(File.read(@config.state_file))
+      rescue Errno::ENOENT
+        @logger.info(progname) { "State file #{@config.state_file} does not exist; reading all log entries" }
+        {}
+      rescue TypeError
+        @logger.error(progname) { "State file #{@config.state_file} is corrupt; ignoring" }
+        {}
+      end
+
       # Docker's `.all` method returns wildly different data in each
       # container's `.info` structure to what `.get` returns (the API
       # endpoints have completely different schemas), and the `.all`
@@ -122,7 +132,7 @@ module Mobystash
       # Thanks, Docker!
       Docker::Container.all({}, docker_connection).each do |c|
         begin
-          @containers[c.id] = Mobystash::Container.new(Docker::Container.get(c.id, {}, docker_connection), @config)
+          @containers[c.id] = Mobystash::Container.new(Docker::Container.get(c.id, {}, docker_connection), @config, last_log_timestamp: state_data[c.id])
           @containers[c.id].run!
         rescue Docker::Error::NotFoundError
           nil

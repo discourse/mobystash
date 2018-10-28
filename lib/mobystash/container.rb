@@ -49,7 +49,7 @@ module Mobystash
     # docker_data is the Docker::Container instance representing the moby
     # container metadata, and system_config is the Mobystash::Config.
     #
-    def initialize(docker_data, system_config)
+    def initialize(docker_data, system_config, last_log_timestamp: nil)
       @id = docker_data.id
 
       @config = system_config
@@ -71,7 +71,7 @@ module Mobystash
         }
       }
 
-      @last_log_timestamp = Time.at(0).utc.strftime("%FT%T.%NZ")
+      @last_log_timestamp = last_log_timestamp || Time.at(0).utc.strftime("%FT%T.%NZ")
       @llt_mutex = Mutex.new
 
       parse_labels(docker_data.info["Config"]["Labels"])

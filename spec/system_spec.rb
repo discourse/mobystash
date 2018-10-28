@@ -131,7 +131,7 @@ describe Mobystash::System do
         allow(Docker::Connection).to receive(:new).with("unix:///var/run/test.sock", {}).and_return(mock_conn)
 
         allow(Docker::Container).to receive(:get).with("asdfasdfbasic", {}, mock_conn).and_return(docker_data)
-        allow(Mobystash::Container).to receive(:new).with(docker_data, system.config).and_return(mobystash_container)
+        allow(Mobystash::Container).to receive(:new).with(docker_data, system.config, last_log_timestamp: nil).and_return(mobystash_container)
         allow(mobystash_container).to receive(:shutdown!)
         allow(mobystash_container).to receive(:last_log_timestamp).and_return("xyzzy")
       end
@@ -285,7 +285,10 @@ describe Mobystash::System do
       expect(Docker::Container).to receive(:all).with({}, mock_conn).and_return([moby_container])
       expect(Docker::Container).to receive(:get).with("asdfasdfbasic", {}, mock_conn).and_return(moby_container)
 
-      expect(Mobystash::Container).to receive(:new).with(moby_container, system.config).and_return(mobystash_container = instance_double(Mobystash::Container))
+      expect(Mobystash::Container)
+        .to receive(:new)
+        .with(moby_container, system.config, last_log_timestamp: nil)
+        .and_return(mobystash_container = instance_double(Mobystash::Container))
       expect(mobystash_container).to receive(:run!)
 
       system.send(:run_existing_containers)
@@ -302,5 +305,55 @@ describe Mobystash::System do
 
       expect(system.instance_variable_get(:@containers).keys.sort).to eq(["asdfasdfbasic", "asdfasdfdisabled"])
     end
+
+    it "provides the last log state data" do
+      expect(File).to receive(:read).with("./mobystash_state.dump").and_return(Marshal.dump("asdfasdfbasic" => "2018-12-12T12:12:12.123456789Z"))
+
+      moby_container = container_fixture("basic_container")
+      expect(Docker::Container).to receive(:all).with({}, mock_conn).and_return([moby_container])
+      expect(Docker::Container).to receive(:get).with("asdfasdfbasic", {}, mock_conn).and_return(moby_container)
+
+      expect(Mobystash::Container)
+        .to receive(:new)
+        .with(moby_container, system.config, last_log_timestamp: "2018-12-12T12:12:12.123456789Z")
+        .and_return(mobystash_container = instance_double(Mobystash::Container))
+      expect(mobystash_container).to receive(:run!)
+
+      system.send(:run_existing_containers)
+    end
+
+    it "provides nil log state data if the file doesn't exist" do
+      expect(File).to receive(:read).with("./mobystash_state.dump").and_raise(Errno::ENOENT)
+
+      moby_container = container_fixture("basic_container")
+      expect(Docker::Container).to receive(:all).with({}, mock_conn).and_return([moby_container])
+      expect(Docker::Container).to receive(:get).with("asdfasdfbasic", {}, mock_conn).and_return(moby_container)
+
+      expect(Mobystash::Container)
+        .to receive(:new)
+        .with(moby_container, system.config, last_log_timestamp: nil)
+        .and_return(mobystash_container = instance_double(Mobystash::Container))
+      expect(mobystash_container).to receive(:run!)
+
+      system.send(:run_existing_containers)
+    end
+
+    it "provides nil log state data if the state file is corrupt" do
+      expect(File).to receive(:read).with("./mobystash_state.dump").and_return("ohai!")
+      expect_log_message(logger, :error, "Mobystash::System", /State file .* is corrupt/)
+
+      moby_container = container_fixture("basic_container")
+      expect(Docker::Container).to receive(:all).with({}, mock_conn).and_return([moby_container])
+      expect(Docker::Container).to receive(:get).with("asdfasdfbasic", {}, mock_conn).and_return(moby_container)
+
+      expect(Mobystash::Container)
+        .to receive(:new)
+        .with(moby_container, system.config, last_log_timestamp: nil)
+        .and_return(mobystash_container = instance_double(Mobystash::Container))
+      expect(mobystash_container).to receive(:run!)
+
+      system.send(:run_existing_containers)
+    end
+
   end
 end

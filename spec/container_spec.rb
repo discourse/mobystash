@@ -33,6 +33,19 @@ describe Mobystash::Container do
       it "creates the container object" do
         expect(container).to be_a(Mobystash::Container)
       end
+
+      it "uses the default last_log_timestamp" do
+        expect(container.last_log_timestamp).to eq("1970-01-01T00:00:00.000000000Z")
+      end
+    end
+
+    context "with a last_log_timestamp" do
+      let(:container_name) { "basic_container" }
+      let(:container) { Mobystash::Container.new(docker_data, config, last_log_timestamp: "2009-06-03T09:06:03.987654321Z") }
+
+      it "overrides the last_log_timestamp" do
+        expect(container.last_log_timestamp).to eq("2009-06-03T09:06:03.987654321Z")
+      end
     end
   end
 
