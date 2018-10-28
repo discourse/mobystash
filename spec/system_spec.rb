@@ -44,6 +44,7 @@ describe Mobystash::System do
     allow(mock_queue).to receive(:push)
     allow(mock_watcher).to receive(:shutdown!)
     allow(mock_writer).to receive(:stop)
+    allow(File).to receive(:write)
   end
 
   describe "#reconnect!" do
@@ -132,6 +133,7 @@ describe Mobystash::System do
         allow(Docker::Container).to receive(:get).with("asdfasdfbasic", {}, mock_conn).and_return(docker_data)
         allow(Mobystash::Container).to receive(:new).with(docker_data, system.config).and_return(mobystash_container)
         allow(mobystash_container).to receive(:shutdown!)
+        allow(mobystash_container).to receive(:last_log_timestamp).and_return("xyzzy")
       end
 
       describe ":created" do
@@ -149,6 +151,7 @@ describe Mobystash::System do
         it "handles things smoothly if the container already exists" do
           c1 = instance_double(Mobystash::Container)
           allow(c1).to receive(:shutdown!)
+          allow(c1).to receive(:last_log_timestamp)
           system.instance_variable_set(:@containers, "c1" => c1)
 
           expect(mock_queue).to receive(:pop).and_return([:created, "c1"])
@@ -191,8 +194,17 @@ describe Mobystash::System do
       end
 
       describe ":terminate" do
+        let(:c1) { instance_double(Mobystash::Container) }
+        let(:c2) { instance_double(Mobystash::Container) }
+
         before :each do
           expect(mock_queue).to receive(:pop).and_return([:terminate])
+
+          system.instance_variable_set(:@containers, "c1" => c1, "c2" => c2)
+          allow(c1).to receive(:last_log_timestamp).and_return("2018-01-01T01:01:01.111111111Z")
+          allow(c1).to receive(:shutdown!)
+          allow(c2).to receive(:last_log_timestamp).and_return("2018-02-02T02:02:02.222222222Z")
+          allow(c2).to receive(:shutdown!)
         end
 
         it "tells the watcher to shutdown" do
@@ -207,12 +219,26 @@ describe Mobystash::System do
           system.run
         end
 
+        it "writes out the state file" do
+          expect(c1).to receive(:shutdown!).ordered
+          expect(c2).to receive(:shutdown!).ordered
+          expect(c1).to receive(:last_log_timestamp).ordered
+          expect(c2).to receive(:last_log_timestamp).ordered
+
+          expect(File)
+            .to receive(:write)
+            .with(
+              "./mobystash_state.dump",
+              Marshal.dump(
+                "c1" => "2018-01-01T01:01:01.111111111Z",
+                "c2" => "2018-02-02T02:02:02.222222222Z",
+              )
+            )
+
+          system.run
+        end
+
         it "tells the containers to shutdown" do
-          c1 = instance_double(Mobystash::Container)
-          c2 = instance_double(Mobystash::Container)
-
-          system.instance_variable_set(:@containers, "c1" => c1, "c2" => c2)
-
           expect(c1).to receive(:shutdown!)
           expect(c2).to receive(:shutdown!)
 

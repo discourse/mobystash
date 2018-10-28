@@ -79,6 +79,7 @@ module Mobystash
           @logger.info(progname) { "Terminating." }
           @watcher.shutdown!
           @containers.values.each { |c| c.shutdown! }
+          write_state_file
           @config.logstash_writer.stop
           @metrics_server.shutdown if @metrics_server
           break
@@ -125,6 +126,18 @@ module Mobystash
           @containers[c.id].run!
         rescue Docker::Error::NotFoundError
           nil
+        end
+      end
+    end
+
+    def write_state_file
+      File.write(@config.state_file, Marshal.dump(container_state))
+    end
+
+    def container_state
+      {}.tap do |state|
+        @containers.each do |id, c|
+          state[id] = c.last_log_timestamp
         end
       end
     end
