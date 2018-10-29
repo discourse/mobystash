@@ -65,8 +65,9 @@ describe Mobystash::System do
 
   describe "#run" do
     before(:each) do
-      # Stub this out, since run_existing_containers has its own tests
+      # Stub these out, since they have their own tests
       allow(system).to receive(:run_existing_containers).and_return(nil)
+      allow(system).to receive(:run_checkpoint_timer).and_return(nil)
     end
 
     context "initialization" do
@@ -98,6 +99,12 @@ describe Mobystash::System do
 
       it "creates and starts existing logging for existing containers" do
         expect(system).to receive(:run_existing_containers)
+
+        system.run
+      end
+
+      it "starts the checkpoint timer" do
+        expect(system).to receive(:run_checkpoint_timer)
 
         system.run
       end
@@ -193,6 +200,15 @@ describe Mobystash::System do
         end
       end
 
+      describe ":checkpoint_state" do
+        it "triggers a state write" do
+          expect(mock_queue).to receive(:pop).and_return([:checkpoint_state])
+          expect(system).to receive(:write_state_file).at_least(:once)
+
+          system.run
+        end
+      end
+
       describe ":terminate" do
         let(:c1) { instance_double(Mobystash::Container) }
         let(:c2) { instance_double(Mobystash::Container) }
@@ -241,6 +257,14 @@ describe Mobystash::System do
         it "tells the containers to shutdown" do
           expect(c1).to receive(:shutdown!)
           expect(c2).to receive(:shutdown!)
+
+          system.run
+        end
+
+        it "cleans up the checkpoint timer thread" do
+          system.instance_variable_set(:@checkpoint_timer_thread, mock_thread = instance_double(Thread))
+          expect(mock_thread).to receive(:kill)
+          expect(mock_thread).to receive(:join)
 
           system.run
         end
@@ -354,6 +378,21 @@ describe Mobystash::System do
 
       system.send(:run_existing_containers)
     end
+  end
 
+  describe "run_checkpoint_timer" do
+    it "sends the :checkpoint_state message periodically" do
+      expect(system).to receive(:sleep).with(1).ordered
+      expect(mock_queue).to receive(:push).with([:checkpoint_state]).ordered
+      expect(system).to receive(:sleep).with(1).ordered
+      expect(mock_queue).to receive(:push).with([:checkpoint_state]).ordered
+      expect(system).to receive(:sleep).with(1).ordered
+      expect(mock_queue).to receive(:push).with([:checkpoint_state]).ordered
+      # Then shut 'er down
+      expect(system).to receive(:sleep).and_raise(StandardError)
+
+      system.send(:run_checkpoint_timer)
+      expect { system.instance_variable_get(:@checkpoint_timer_thread).join }.to raise_error(StandardError)
+    end
   end
 end

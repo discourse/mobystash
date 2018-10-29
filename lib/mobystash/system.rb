@@ -53,6 +53,7 @@ module Mobystash
       end
 
       run_existing_containers
+      run_checkpoint_timer
 
       @logger.info(progname) { "Commencing real-time log collection" }
 
@@ -75,8 +76,15 @@ module Mobystash
           end
         when :destroyed
           @containers.delete(item.last).tap { |c| c.shutdown! if c }
+        when :checkpoint_state
+          write_state_file
         when :terminate
           @logger.info(progname) { "Terminating." }
+          if @checkpoint_timer_thread
+            @checkpoint_timer_thread.kill
+            @checkpoint_timer_thread.join rescue nil
+            @checkpoint_timer_thread = nil
+          end
           @watcher.shutdown!
           @containers.values.each { |c| c.shutdown! }
           write_state_file
@@ -136,6 +144,15 @@ module Mobystash
           @containers[c.id].run!
         rescue Docker::Error::NotFoundError
           nil
+        end
+      end
+    end
+
+    def run_checkpoint_timer
+      @checkpoint_timer_thread = Thread.new do
+        loop do
+          sleep @config.state_checkpoint_interval
+          @queue.push([:checkpoint_state])
         end
       end
     end
