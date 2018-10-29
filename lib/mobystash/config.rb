@@ -91,7 +91,7 @@ module Mobystash
     def pluck_string(env, key, default: nil)
       if env[key].nil? || env[key].empty?
         if default.nil?
-          raise InvalidEnvironmentError, "Environment variable #{env} must be specified."
+          raise InvalidEnvironmentError, "Environment variable #{key} must be specified."
         else
           return default
         end
