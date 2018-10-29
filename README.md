@@ -117,6 +117,16 @@ sensible default which works OK in at least some circumstances.
     a webserver will be started on port 9367, which will emit
     [Prometheus](https://prometheus.io/) metric data on `/metrics`.
 
+* **`MOBYSTASH_STATE_CHECKPOINT_INTERVAL`**
+
+    *Default: `"1"`
+
+    The duration of time, in seconds, that will approximately elapse between
+    updates to the state file, which keeps a record of the timestamp of the
+    last log entry seen for each container.  The value can be any non-negative
+    decimal number.  The smaller the interval, the fewer log entries will be
+    duplicated after a crash, but the more disk I/O will be consumed.
+
 * **`MOBYSTASH_STATE_FILE`**
 
     *Default: `"./mobystash_state.dump"`

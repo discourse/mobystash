@@ -105,6 +105,64 @@ describe Mobystash::Config do
       end
     end
 
+    context "MOBYSTASH_STATE_CHECKPOINT_INTERVAL" do
+      let(:value) { config.state_checkpoint_interval }
+
+      context "by default" do
+        it "is the default value" do
+          expect(value).to eq(1)
+        end
+      end
+
+      context "with an empty string" do
+        let(:env) { base_env.merge("MOBYSTASH_STATE_CHECKPOINT_INTERVAL" => "") }
+
+        it "keeps the default" do
+          expect(value).to eq(1)
+        end
+      end
+
+      context "with an integer" do
+        let(:env) { base_env.merge("MOBYSTASH_STATE_CHECKPOINT_INTERVAL" => "42") }
+
+        it "stores the given value" do
+          expect(value).to eq(42)
+        end
+      end
+
+      context "with a decimal number" do
+        let(:env) { base_env.merge("MOBYSTASH_STATE_CHECKPOINT_INTERVAL" => "42.42") }
+
+        it "stores the given value" do
+          expect(value).to eq(42.42)
+        end
+      end
+
+      context "with zero" do
+        let(:env) { base_env.merge("MOBYSTASH_STATE_CHECKPOINT_INTERVAL" => "0") }
+
+        it "stores the given value" do
+          expect(value).to eq(0)
+        end
+      end
+
+      context "with a negative number" do
+        let(:env) { base_env.merge("MOBYSTASH_STATE_CHECKPOINT_INTERVAL" => "-42") }
+
+        it "freaks out" do
+          expect { config }.to raise_error(Mobystash::Config::InvalidEnvironmentError)
+        end
+      end
+
+      context "with a wordy string" do
+        let(:env) { base_env.merge("MOBYSTASH_STATE_CHECKPOINT_INTERVAL" => "-forty-two") }
+
+        it "freaks out" do
+          expect { config }.to raise_error(Mobystash::Config::InvalidEnvironmentError)
+        end
+      end
+    end
+
     context "DOCKER_HOST" do
       let(:value) { config.docker_host }
 

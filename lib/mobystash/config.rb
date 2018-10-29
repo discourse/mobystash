@@ -11,6 +11,7 @@ module Mobystash
     attr_reader :logstash_writer,
                 :enable_metrics,
                 :state_file,
+                :state_checkpoint_interval,
                 :docker_host
 
     attr_reader :logger
@@ -65,9 +66,10 @@ module Mobystash
         metrics_registry: @metrics_registry,
       )
 
-      @enable_metrics  = pluck_boolean(env, "MOBYSTASH_ENABLE_METRICS", default: false)
-      @state_file      = pluck_string(env, "MOBYSTASH_STATE_FILE", default: "./mobystash_state.dump")
-      @docker_host     = pluck_string(env, "DOCKER_HOST", default: "unix:///var/run/docker.sock")
+      @enable_metrics            = pluck_boolean(env, "MOBYSTASH_ENABLE_METRICS", default: false)
+      @state_file                = pluck_string(env, "MOBYSTASH_STATE_FILE", default: "./mobystash_state.dump")
+      @state_checkpoint_interval = pluck_float(env, "MOBYSTASH_STATE_CHECKPOINT_INTERVAL", default: 1, valid_range: 0..Float::INFINITY)
+      @docker_host               = pluck_string(env, "DOCKER_HOST", default: "unix:///var/run/docker.sock")
     end
 
     def pluck_boolean(env, key, default: nil)
@@ -96,6 +98,25 @@ module Mobystash
       end
 
       env[key]
+    end
+
+    def pluck_float(env, key, valid_range: nil, default: nil)
+      if env[key].nil? || env[key].empty?
+        return default
+      end
+
+      if env[key] !~ /\A-?\d+(?:\.\d*)?\z/
+        raise InvalidEnvironmentError,
+              "Value for #{key} (#{env[key].inspect}) is not a floating-point number"
+      end
+
+      v = env[key].to_f
+      unless valid_range.nil? || valid_range.include?(v)
+        raise InvalidEnvironmentError,
+              "Value for #{key} (#{env[key]}) out of range (must be between #{valid_range.first} and #{valid_range.last} inclusive)"
+      end
+
+      v
     end
   end
 end
