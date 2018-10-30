@@ -1,6 +1,7 @@
 require 'logger'
 require 'logstash_writer'
 require 'prometheus/client'
+require 'mobystash/sampler'
 
 module Mobystash
   # Encapsulates all common configuration parameters and shared metrics.
@@ -10,6 +11,9 @@ module Mobystash
 
     attr_reader :logstash_writer,
                 :enable_metrics,
+                :sample_ratio,
+                :sample_keys,
+                :sampler,
                 :state_file,
                 :state_checkpoint_interval,
                 :docker_host
@@ -21,7 +25,11 @@ module Mobystash
     attr_reader :read_event_exception_counter,
                 :log_entries_read_counter,
                 :log_entries_sent_counter,
-                :last_log_entry_at
+                :last_log_entry_at,
+                :sampled_entries_sent,
+                :sampled_entries_dropped,
+                :unsampled_entries,
+                :sample_ratios
 
     # Create a new Mobystash system config based on environment variables.
     #
@@ -45,6 +53,7 @@ module Mobystash
       # the registry in place, because conditionalising every metrics-related
       # operation on whether metrics are enabled is just... madness.
       @metrics_registry = Prometheus::Client::Registry.new
+      @sampler = Mobystash::Sampler.new(self)
 
       parse_env(env)
 
@@ -52,6 +61,10 @@ module Mobystash
       @log_entries_read_counter     = @metrics_registry.counter(:mobystash_log_entries_read_total, "How many log entries have been received from Moby")
       @log_entries_sent_counter     = @metrics_registry.counter(:mobystash_log_entries_sent_total, "How many log entries have been sent to the LogstashWriter")
       @last_log_entry_at            = @metrics_registry.gauge(:mobystash_last_log_entry_at_seconds, "The time at which the last log entry was timestamped")
+      @sampled_entries_sent         = @metrics_registry.counter(:mobystash_sampled_entries_sent_total, "The number of sampled entries which have been sent")
+      @sampled_entries_dropped      = @metrics_registry.counter(:mobystash_sampled_entries_dropped_total, "The number of sampled log entries which didn't get sent")
+      @unsampled_entries            = @metrics_registry.counter(:mobystash_unsampled_entries_total, "How many log messages we've seen which didn't match any defined sample keys")
+      @sample_ratios                = @metrics_registry.gauge(:mobystash_sample_ratio, "The current sample ratio for each sample key")
     end
 
     private
@@ -67,6 +80,8 @@ module Mobystash
       )
 
       @enable_metrics            = pluck_boolean(env, "MOBYSTASH_ENABLE_METRICS", default: false)
+      @sample_ratio              = pluck_float(env, "MOBYSTASH_SAMPLE_RATIO", default: 1, valid_range: 1..Float::INFINITY)
+      @sample_keys               = pluck_sample_keys(env)
       @state_file                = pluck_string(env, "MOBYSTASH_STATE_FILE", default: "./mobystash_state.dump")
       @state_checkpoint_interval = pluck_float(env, "MOBYSTASH_STATE_CHECKPOINT_INTERVAL", default: 1, valid_range: 0..Float::INFINITY)
       @docker_host               = pluck_string(env, "DOCKER_HOST", default: "unix:///var/run/docker.sock")
@@ -117,6 +132,19 @@ module Mobystash
       end
 
       v
+    end
+
+    def pluck_sample_keys(env)
+      [].tap do |sample_keys|
+        env.each do |k, v|
+          if k =~ /\AMOBYSTASH_SAMPLE_KEY_(.*)\z/
+            sample_keys << [Regexp.new(v), $1]
+          end
+        end
+        # We really, *really* don't want pepole coming to rely on specific
+        # ordering behaviour of sample keys, so on every run we shuffle the
+        # key order so it'll break sooner rather than later.
+      end.sort_by { rand }
     end
   end
 end

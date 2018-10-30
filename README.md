@@ -62,6 +62,103 @@ follows, you'll automatically get deduplication:
     }
 
 
+## Adaptive Sampling
+
+Since logging systems can potentially generate large volumes of data very
+quickly, it is useful to be able to keep the log volume under control by means
+of *sampling*.  This involves only sending a small percentage of the log
+entries that are received by `mobystash`, and dropping the rest on the floor.
+To ensure you can reconstruct the underlying statistical data, the ratio at
+which the log entries were sampled is recorded in the `mobystash.sample_ratio`
+attribute (a decimal number) on each event that is sent.
+
+The "*adaptive*" part of "adaptive sampling" means that you can define any
+number of "sample keys" (regular expressions which match some subset of your
+log entries), and the sample ratio of each key will be adjusted independently to
+try and keep the total sample ratio close to a value you specify, whilst at the
+same time ensuring that messages matching the less-frequently matched sample
+keys are sent more often,so you'll still see them now and then.  For more
+information on the rationale and mathematics behind this approach to sampling,
+I would *strongly* recommend you read [this blog post from
+Honeycomb](https://www.honeycomb.io/blog/instrumenting-high-volume-services-part-3/).
+
+To configure adaptive sampling in `mobystash`, you need to do two things:
+
+1. Define a target sample ratio, by setting the `MOBYSTASH_SAMPLE_RATIO`
+   environment variable to a positive integer.  This defines how many log
+   entries must be seen, on average, for one log entry to be sent to logstash.
+
+2. Define one or more sample keys, by setting `MOBYSTASH_SAMPLE_KEY_<string>`
+   environment variables to (Ruby-compatible) regular expressions.
+
+What will happen now is that whenever a log entry comes in, the `message`
+portion of the log entry (after any syslog parsing, if necessary) will be
+matched against the unanchored regular expression defined in each sample key
+environment variable.  The first regular expression that matches will associate
+the log entry with the sample key corresponding to the regular expression that
+matched.
+
+> **NOTE**: the order in which regular expressions are matched is not defined,
+> and no particular order is to be relied upon.  It is strongly recommended
+> that you ensure that no log entry could match more than one regular
+> expression, lest confusion reign.
+
+Once a sample key is identified, the current calculated sample ratio for that
+key will be used, along with random chance, to decide whether to send or drop
+the log entry.  The sample key that matched the log entry will be included in
+the entry under the `mobystash.sample_key` attribute, to help debugging and
+general visibility.
+
+If no regular expression matches the log entry, it will not be subjected to
+sampling, and will be sent on.  In that case, the `mobystash.sample_ratio`
+and `mobystash.sample_key` attributes will *not* be present on the log entry,
+and you can use the Kibana "field absent" filter to find log entries that
+were not associated with any sample key.
+
+Because everything's better with metrics, each log entry that is sent or
+dropped will be counted in either the `mobystash_sampled_entries_sent_total` or
+`mobystash_sampled_entries_dropped_total` metric, labelled with the
+`sample_key`.  Log entries that did not match a sample key will not be counted
+in either of these metrics, and will instead be counted in
+the (unlabelled) `mobystash_unsampled_entries_total` metric.  The current sample
+ratio for each `metric_key` is available in the `mobystash_sample_ratio` gauge.
+
+It is important to note that all sampling happens during initial event
+processing, long before the log entries go into the queue to be sent to
+logstash.  If the sending queue fills up, entries will be dropped in purely age
+order, with no consideration for sample ratios.  Thus it is important to not let
+your queues overflow if you want to maintain the statistical validity of your
+data.
+
+
+### Dynamic sample keys
+
+Let's say you're processing HTTP access logs.  Each log entry contains a HTTP
+response code, and you'd like to use that as your sample key, so that you get
+your (many and frequent) `200 OK` down-sampled heavily, whilst your (hopefully
+rare) 500 responses are all recorded.
+
+You could, of course, sit down and define a regular expression for each HTTP
+response code, and tie it to an individual sample key, but ain't *nobody* got
+time for that.  Instead, you can capture portions of the message (surrounding
+parts of the regular expression with parentheses), and then substitute those
+into the sample key to generate the actual key via backreferences (`\N`, where
+`N` is a digit between `1` and `9` inclusive -- yes, you can have a maximum of
+nine backreferences).
+
+As an example, if our HTTP access logs contained the HTTP response code tagged
+with `rsp:`, as in `rsp:200` or `rsp:404`, and surrounded by spaces. You could
+use the following environment variable definition:
+
+    MOBYSTASH_SAMPLE_KEY_http_\1=" rsp:(\d{3}) "
+
+When `mobystash` matches a log entry against that regular expression, the first
+(and, in this case, only) capture -- the three digits matched by `\d{3}` --
+will be substituted for the `\1` in the key name, to produce a sample key of,
+say, `http_200` or `http_404`.  It is that string which will then be used to
+aggregate log entry counts and determine the appropriate sample ratio.
+
+
 # Configuration
 
 All configuration of `mobystash` is done via environment variables.  The
@@ -116,6 +213,26 @@ sensible default which works OK in at least some circumstances.
     If set to a true-ish string (`"yes"`, `"true"`, `"on"`, or `"1"`), then
     a webserver will be started on port 9367, which will emit
     [Prometheus](https://prometheus.io/) metric data on `/metrics`.
+
+* **`MOBYSTASH_SAMPLE_RATIO`**
+
+    *Default*: `"1"`
+
+    Sets the number of log entries that will be read, on average, in order for
+    one log entry to be sent, as part of the adaptive sampling system.  This
+    configuration variable will only be active if one or more sample keys are
+    defined, via the `MOBYSTASH_SAMPLE_KEY_<string>` environment variable
+    prefix.
+
+    For more details, see the section "[Adaptive
+    Sampling](#adaptive-sampling)", above.
+
+* **`MOBYSTASH_SAMPLE_KEY_<string>`**
+
+    Define a sample key, for use in mobystash's adaptive sampling system.  The
+    `<string>` can be any non-empty string, and can include backreference
+    specifiers `\1` to `\9`.  For more details, see the section "[Adaptive
+    Sampling](#adaptive-sampling)", above.
 
 * **`MOBYSTASH_STATE_CHECKPOINT_INTERVAL`**
 
@@ -304,9 +421,9 @@ are exposed.
   entries that have been sent on to the LogstashWriter, labelled the same as
   `mobystash_log_entries_read_total`.  Differences between
   this counter and `mobystash_log_entries_read_total` can be caused by
-  filtering (filtered log entries are counted by `read_total`, but not
-  `sent_total`), log entries which failed to be processed (due to
-  exception), or nasssssssty bugsssses.
+  filtering and sampling (filtered and sampled log entries are counted by
+  `read_total`, but not `sent_total`), log entries which failed to be processed
+  (due to exception), or nasssssssty bugsssses.
 
 * **`mobystash_moby_watch_exceptions_total`**: How many exceptions have been
   raised whilst polling the moby daemon looking for start/stop events. 
@@ -318,6 +435,22 @@ are exposed.
   container name, and container ID.  This should never be a non-zero number,
   but if it is, the exception details, including a backtrace, should be in
   the logs.
+
+* **`mobystash_sampled_entries_sent_total`**: How many sampled log entries
+  have been sent on to logstash, labelled by the `metric_key` that matched
+  the log entry.
+
+* **`mobystash_sampled_entries_dropped_total`**: How many sampled log entres
+  have been dropped (not sent on to logstash), labelled by the `metric_key`
+  that matched the log entry.
+
+* **`mobystash_sample_ratio`**: The current sample ratio being used to reduce
+  the number of log entries sent to logstash, labelled by the `metric_key`.
+
+* **`mobystash_unsampled_entries_total`**: How many log entries have gone
+  through without being matched by any metric key.  Mostly useful if you
+  *expect* all your log entries to match a metric key, in which case a
+  non-zero value here would be worth investigating.
 
 
 ## HTTP metrics server

@@ -79,6 +79,111 @@ describe Mobystash::Config do
       end
     end
 
+    context "MOBYSTASH_SAMPLE_RATIO" do
+      let(:value) { config.sample_ratio }
+
+      context "with no value" do
+        it "is the default value" do
+          expect(value).to eq(1)
+        end
+      end
+
+      context "with an empty string" do
+        let(:env) { base_env.merge("MOBYSTASH_SAMPLE_RATIO" => "") }
+
+        it "is the default value" do
+          expect(value).to eq(1)
+        end
+      end
+
+      context "with an integer" do
+        let(:env) { base_env.merge("MOBYSTASH_SAMPLE_RATIO" => "42") }
+
+        it "is the given value" do
+          expect(value).to eq(42)
+        end
+      end
+
+      context "with a float" do
+        let(:env) { base_env.merge("MOBYSTASH_SAMPLE_RATIO" => "42.42") }
+
+        it "is the given value" do
+          expect(value).to be_within(0.0001).of(42.42)
+        end
+      end
+
+      context "with zero" do
+        let(:env) { base_env.merge("MOBYSTASH_SAMPLE_RATIO" => "0") }
+
+        it "freaks out" do
+          expect { config }.to raise_error(Mobystash::Config::InvalidEnvironmentError)
+        end
+      end
+
+      context "with a negative number" do
+        let(:env) { base_env.merge("MOBYSTASH_SAMPLE_RATIO" => "-42") }
+
+        it "freaks out" do
+          expect { config }.to raise_error(Mobystash::Config::InvalidEnvironmentError)
+        end
+      end
+
+      context "with a positive number less than one" do
+        let(:env) { base_env.merge("MOBYSTASH_SAMPLE_RATIO" => "0.42") }
+
+        it "freaks out" do
+          expect { config }.to raise_error(Mobystash::Config::InvalidEnvironmentError)
+        end
+      end
+
+      context "with a string" do
+        let(:env) { base_env.merge("MOBYSTASH_SAMPLE_RATIO" => "forty-two") }
+
+        it "freaks out" do
+          expect { config }.to raise_error(Mobystash::Config::InvalidEnvironmentError)
+        end
+      end
+    end
+
+    context "MOBYSTASH_SAMPLE_KEY_*" do
+      let(:sample_keys) { config.sample_keys }
+
+      context "is undefined" do
+        it "returns an empty array" do
+          expect(sample_keys).to eq([])
+        end
+      end
+
+      context "a single simple regex" do
+        let(:env) { base_env.merge("MOBYSTASH_SAMPLE_KEY_foo" => "abc[de]+") }
+
+        it "returns a single-element array" do
+          expect(sample_keys).to eq([[/abc[de]+/, "foo"]])
+        end
+      end
+
+      context "multiple simple regexes" do
+        let(:env) { base_env.merge(
+          "MOBYSTASH_SAMPLE_KEY_foo" => "abc[de]+",
+          "MOBYSTASH_SAMPLE_KEY_bar" => "lol(rus)?",
+        )}
+
+        it "returns a two-element array" do
+          expect(sample_keys.length).to eq(2)
+          expect(sample_keys).to include([/abc[de]+/, "foo"])
+          expect(sample_keys).to include([/lol(rus)?/, "bar"])
+        end
+      end
+
+      context "capturing regex" do
+        let(:env) { base_env.merge("MOBYSTASH_SAMPLE_KEY_cap_\\1_ture" => "the (gr+eat) escape") }
+
+        it "returns a single-element array" do
+          expect(sample_keys).to eq([[/the (gr+eat) escape/, "cap_\\1_ture"]])
+        end
+      end
+    end
+
     context "MOBYSTASH_STATE_FILE" do
       let(:value) { config.state_file }
 

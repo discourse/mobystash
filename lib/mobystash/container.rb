@@ -52,9 +52,10 @@ module Mobystash
     def initialize(docker_data, system_config, last_log_timestamp: nil)
       @id = docker_data.id
 
-      @config = system_config
-      @logger = @config.logger
-      @writer = @config.logstash_writer
+      @config  = system_config
+      @logger  = @config.logger
+      @writer  = @config.logstash_writer
+      @sampler = @config.sampler
 
       @name = (docker_data.info["Name"] || docker_data.info["Names"].first).sub(/\A\//, '')
 
@@ -204,6 +205,10 @@ module Mobystash
         [msg, {}]
       end
 
+      passed, sampling_metadata = @sampler.sample(msg)
+
+      return unless passed
+
       unless @filter_regex && @filter_regex =~ msg
         event = {
           message: msg,
@@ -211,7 +216,7 @@ module Mobystash
           moby: {
             stream: stream.to_s,
           },
-        }.deep_merge(syslog_fields).deep_merge!(@tags)
+        }.deep_merge(syslog_fields).deep_merge(sampling_metadata).deep_merge!(@tags)
 
         # Can't calculate the document_id until you've got a constructed event...
         metadata = {
