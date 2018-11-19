@@ -4,5 +4,5 @@
 /coverage
 /.bundle
 /tmp
-
 .rubocop-https---raw-githubusercontent-com-discourse-discourse-master--rubocop-yml
+/mobystash_state.dump
