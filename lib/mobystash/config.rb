@@ -71,11 +71,11 @@ module Mobystash
 
     def parse_env(env)
       @logstash_writer = LogstashWriter.new(
-        server_name: pluck_string(env, "LOGSTASH_SERVER"),
-        logger: @logger,
+        server_name:      pluck_string(env, "LOGSTASH_SERVER"),
+        logger:           @logger,
         # We're shipping a lot of container logs, it seems reasonable to have
         # a larger-than-default buffer in case of accidents.
-        backlog: 1_000_000,
+        backlog:          1_000_000,
         metrics_registry: @metrics_registry,
       )
 

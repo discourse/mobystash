@@ -211,9 +211,9 @@ module Mobystash
 
       unless @filter_regex && @filter_regex =~ msg
         event = {
-          message: msg,
+          message:      msg,
           "@timestamp": @last_log_timestamp,
-          moby: {
+          moby:         {
             stream: stream.to_s,
           },
         }.deep_merge(syslog_fields).deep_merge(sampling_metadata).deep_merge!(@tags)
