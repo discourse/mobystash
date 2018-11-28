@@ -411,11 +411,11 @@ are exposed.
   by the moby daemon while we've been watching, labelled by the type of event.
 
 * **`mobystash_log_entries_read_total`**: A count of the number of log
-  entries that have been received from the Moby daemon, labelled by
-  container name (`name`), container ID (`container_id`), and whether the
-  log entry came through stdout or stderr (`stream`).  Since containers that
-  have been labelled as "disabled" for mobystash purposes don't read log
-  entries, they shouldn't show up in here at all.
+  entries that have been received from the Moby daemon, labelled by container
+  name (`container_name`), container ID (`container_id`), and whether the log
+  entry came through stdout or stderr (`stream`).  Since containers that have
+  been labelled as "disabled" for mobystash purposes don't read log entries,
+  they shouldn't show up in here at all.
 
 * **`mobystash_log_entries_sent_total`**: A count of the number of log
   entries that have been sent on to the LogstashWriter, labelled the same as
