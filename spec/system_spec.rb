@@ -241,7 +241,7 @@ describe Mobystash::System do
           expect(c1).to receive(:last_log_timestamp).ordered
           expect(c2).to receive(:last_log_timestamp).ordered
 
-          expect(File).to receive(:open).with("./mobystash_state.dump.new", File::WRONLY | File::CREAT | File::TRUNC | 0600).and_yield(mock_file = instance_double(File))
+          expect(File).to receive(:open).with("./mobystash_state.dump.new", File::WRONLY | File::CREAT | File::TRUNC, 0600).and_yield(mock_file = instance_double(File))
           expect(mock_file).to receive(:write).with(
             Marshal.dump(
               "c1" => "2018-01-01T01:01:01.111111111Z",
