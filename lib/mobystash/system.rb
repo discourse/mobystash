@@ -158,7 +158,7 @@ module Mobystash
     end
 
     def write_state_file
-      File.open("#{@config.state_file}.new", File::WRONLY | File::CREAT | File::TRUNC | 0600) do |fd|
+      File.open("#{@config.state_file}.new", File::WRONLY | File::CREAT | File::TRUNC, 0600) do |fd|
         fd.write Marshal.dump(container_state)
         fd.fdatasync
       end
