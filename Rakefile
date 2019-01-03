@@ -12,6 +12,21 @@ rescue Bundler::BundlerError => e
   exit e.status_code
 end
 
+def git_describe
+  @git_describe ||= `git describe --always --dirty`.chomp
+end
+
+def version
+  build_metadata = git_describe()
+  raise RuntimeError.new("Received empty build metadata from 'git describe'") unless build_metadata.length > 0
+  "0.0.1-git+#{build_metadata}"
+end
+
+def docker_tagify(tag)
+  # https://docs.docker.com/engine/reference/commandline/tag/
+  tag.tr_s('^A-Za-z0-9_.\-', '-').sub(/^-+/, '')
+end
+
 require 'yard'
 
 task :rubocop do
@@ -37,14 +52,18 @@ RSpec::Core::RakeTask.new :test do |t|
 end
 
 namespace :docker do
+  tag = docker_tagify(version())
+
   desc "Build a new docker image"
   task :build do
     sh "docker pull ruby:2.3-alpine"
     sh "docker build -t discourse/mobystash --build-arg=http_proxy=#{ENV['http_proxy']} --build-arg=GIT_REVISION=$(git rev-parse HEAD) ."
+    sh "docker tag discourse/mobystash discourse/mobystash:#{tag}"
   end
 
   desc "Publish a new docker image"
   task publish: :build do
+    sh "docker push discourse/mobystash:#{tag}"
     sh "docker push discourse/mobystash"
   end
 end
