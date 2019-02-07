@@ -1,4 +1,4 @@
-FROM ruby:2.3-alpine
+FROM ruby:2.5-alpine
 
 MAINTAINER Matt Palmer "matt.palmer@discourse.org"
 
@@ -19,7 +19,7 @@ ARG GIT_REVISION=invalid-build
 ENV MOBYSTASH_GIT_REVISION=$GIT_REVISION
 
 COPY bin/* /usr/local/bin/
-COPY lib/ /usr/local/lib/ruby/2.3.0/
+COPY lib/ /usr/local/lib/ruby/2.5.0/
 
 EXPOSE 9367
 LABEL org.discourse.service._prom-exp.port=9367 org.discourse.service._prom-exp.instance=mobystash org.discourse.mobystash.disable=yes

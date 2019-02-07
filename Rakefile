@@ -56,8 +56,7 @@ namespace :docker do
 
   desc "Build a new docker image"
   task :build do
-    sh "docker pull ruby:2.3-alpine"
-    sh "docker build -t discourse/mobystash --build-arg=http_proxy=#{ENV['http_proxy']} --build-arg=GIT_REVISION=$(git rev-parse HEAD) ."
+    sh "docker build --pull -t discourse/mobystash --build-arg=http_proxy=#{ENV['http_proxy']} --build-arg=GIT_REVISION=$(git rev-parse HEAD) ."
     sh "docker tag discourse/mobystash discourse/mobystash:#{tag}"
   end
 
