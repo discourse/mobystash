@@ -1,4 +1,4 @@
-ruby '> 2.3', '< 2.6'
+ruby '> 2.3', '< 2.7'
 
 source 'https://rubygems.org'
 
@@ -12,6 +12,7 @@ gem 'logstash_writer', '~> 0.0'
 gem 'murmurhash3', '~> 0.1'
 gem 'rbtrace', '~> 0.4'
 gem 'sigdump', require: 'sigdump/setup'
+
 group :development do
   gem 'byebug'
   gem 'guard-rspec'
