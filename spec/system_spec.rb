@@ -8,7 +8,7 @@ describe Mobystash::System do
   let(:base_env) do
     {
       "LOGSTASH_SERVER" => "speccy",
-      "DOCKER_HOST"     => "unix:///var/run/test.sock",
+      "DOCKER_HOST" => "unix:///var/run/test.sock",
     }
   end
   let(:env) { base_env }

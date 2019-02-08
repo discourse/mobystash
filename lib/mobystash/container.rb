@@ -64,10 +64,10 @@ module Mobystash
 
       @tags = {
         moby: {
-          name:     @name,
-          id:       @id,
+          name: @name,
+          id: @id,
           hostname: docker_data.info["Config"]["Hostname"],
-          image:    docker_data.info["Config"]["Image"],
+          image: docker_data.info["Config"]["Image"],
           image_id: docker_data.info["Image"],
         }
       }
@@ -164,13 +164,13 @@ module Mobystash
           conn.get(
             "/containers/#{@id}/logs",
             {
-              since:      (Time.strptime(@last_log_timestamp, "%FT%T.%N%Z") + ONE_NANOSECOND).strftime("%s.%N"),
+              since: (Time.strptime(@last_log_timestamp, "%FT%T.%N%Z") + ONE_NANOSECOND).strftime("%s.%N"),
               timestamps: true,
-              follow:     true,
-              stdout:     true,
-              stderr:     true,
+              follow: true,
+              stdout: true,
+              stderr: true,
             },
-            idempotent:     false,
+            idempotent: false,
             response_block: chunk_parser
           )
         rescue Docker::Error::NotFoundError
@@ -222,7 +222,7 @@ module Mobystash
         metadata = {
           "@metadata": {
             document_id: MurmurHash3::V128.murmur3_128_str_base64digest(event.to_json)[0..-3],
-            event_type:  "moby",
+            event_type: "moby",
           }
         }
 
@@ -260,14 +260,14 @@ module Mobystash
         facility = flags / 8
 
         [message, { syslog: {
-          timestamp:     timestamp,
-          severity_id:   severity,
+          timestamp: timestamp,
+          severity_id: severity,
           severity_name: SYSLOG_SEVERITIES[severity],
-          facility_id:   facility,
+          facility_id: facility,
           facility_name: SYSLOG_FACILITIES[facility],
-          hostname:      hostname,
-          program:       program,
-          pid:           pid.nil? ? nil : pid.to_i,
+          hostname: hostname,
+          program: program,
+          pid: pid.nil? ? nil : pid.to_i,
         }.select { |k, v| !v.nil? } }]
       else
         [msg, {}]

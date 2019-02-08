@@ -71,7 +71,7 @@ describe Mobystash::Container do
           .to receive(:get)
           .with("/containers/asdfasdfbasic/logs",
             { timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000001" },
-            idempotent:     false,
+            idempotent: false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
@@ -94,7 +94,7 @@ describe Mobystash::Container do
           .to receive(:get)
           .with("/containers/asdfasdfbasic/logs",
             { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228204" },
-            idempotent:     false,
+            idempotent: false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
@@ -102,19 +102,19 @@ describe Mobystash::Container do
         expect(mock_writer)
           .to receive(:send_event)
           .with(
-            message:      "xyzzy",
-            moby:         {
-              name:     "basic_container",
-              id:       "asdfasdfbasic",
+            message: "xyzzy",
+            moby: {
+              name: "basic_container",
+              id: "asdfasdfbasic",
               hostname: "basic-container",
-              image:    "rspec/basic_container:latest",
+              image: "rspec/basic_container:latest",
               image_id: "poiuytrewqbasic",
-              stream:   "stdout",
+              stream: "stdout",
             },
             "@timestamp": "2018-10-02T08:39:16.458228203Z",
-            "@metadata":  {
+            "@metadata": {
               document_id: match(DOC_ID_REGEX),
-              event_type:  "moby",
+              event_type: "moby",
             },
           )
 
@@ -138,7 +138,7 @@ describe Mobystash::Container do
           .to receive(:get)
           .with("/containers/asdfasdfbasic/logs",
             { timestamps: true, stdout: true, stderr: true, follow: true, since: "1234567890.987654322" },
-            idempotent:     false,
+            idempotent: false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
@@ -161,7 +161,7 @@ describe Mobystash::Container do
           .to receive(:get)
           .with("/containers/asdfasdfbasic/logs",
             { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228204" },
-            idempotent:     false,
+            idempotent: false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
@@ -169,19 +169,19 @@ describe Mobystash::Container do
         expect(mock_writer)
           .to receive(:send_event)
           .with(
-            message:      "<150>Oct 11 10:10:35 sumhost ohai[3656]: hello from syslog!",
-            moby:         {
-              name:     "basic_container",
-              id:       "asdfasdfbasic",
+            message: "<150>Oct 11 10:10:35 sumhost ohai[3656]: hello from syslog!",
+            moby: {
+              name: "basic_container",
+              id: "asdfasdfbasic",
               hostname: "basic-container",
-              image:    "rspec/basic_container:latest",
+              image: "rspec/basic_container:latest",
               image_id: "poiuytrewqbasic",
-              stream:   "stderr",
+              stream: "stderr",
             },
             "@timestamp": "2018-10-02T08:39:16.458228203Z",
-            "@metadata":  {
+            "@metadata": {
               document_id: match(DOC_ID_REGEX),
-              event_type:  "moby",
+              event_type: "moby",
             },
           )
 
@@ -210,7 +210,7 @@ describe Mobystash::Container do
           .to receive(:get)
           .with("/containers/asdfasdffiltered/logs",
             { timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000001" },
-            idempotent:     false,
+            idempotent: false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
@@ -233,7 +233,7 @@ describe Mobystash::Container do
           .to receive(:get)
           .with("/containers/asdfasdffiltered/logs",
             { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228204" },
-            idempotent:     false,
+            idempotent: false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
@@ -241,19 +241,19 @@ describe Mobystash::Container do
         expect(mock_writer)
           .to receive(:send_event)
           .with(
-            message:      "A",
-            moby:         {
-              name:     "filtered_container",
-              id:       "asdfasdffiltered",
+            message: "A",
+            moby: {
+              name: "filtered_container",
+              id: "asdfasdffiltered",
               hostname: "filtered-container",
-              image:    "rspec/filtered_container:latest",
+              image: "rspec/filtered_container:latest",
               image_id: "poiuytrewqfiltered",
-              stream:   "stdout",
+              stream: "stdout",
             },
             "@timestamp": "2018-10-02T08:39:16.458228203Z",
-            "@metadata":  {
+            "@metadata": {
               document_id: match(DOC_ID_REGEX),
-              event_type:  "moby",
+              event_type: "moby",
             },
           )
 
@@ -275,7 +275,7 @@ describe Mobystash::Container do
           .to receive(:get)
           .with("/containers/asdfasdffiltered/logs",
             { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228204" },
-            idempotent:     false,
+            idempotent: false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
@@ -295,7 +295,7 @@ describe Mobystash::Container do
           .to receive(:get)
           .with("/containers/asdfasdftagged/logs",
             { timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000001" },
-            idempotent:     false,
+            idempotent: false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           ).and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
 
@@ -317,31 +317,31 @@ describe Mobystash::Container do
           .to receive(:get)
           .with("/containers/asdfasdftagged/logs",
             { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228204" },
-            idempotent:     false,
+            idempotent: false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           ).ordered.and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
 
         expect(mock_writer)
           .to receive(:send_event)
           .with(
-            message:      "A",
-            something:    "funny",
-            fred:         "jones",
-            nested:       {
+            message: "A",
+            something: "funny",
+            fred: "jones",
+            nested: {
               tags: "work",
             },
-            moby:         {
-              name:     "tagged_container",
-              id:       "asdfasdftagged",
+            moby: {
+              name: "tagged_container",
+              id: "asdfasdftagged",
               hostname: "tagged-container",
-              image:    "rspec/tagged_container:latest",
+              image: "rspec/tagged_container:latest",
               image_id: "poiuytrewqtagged",
-              stream:   "stdout",
+              stream: "stdout",
             },
             "@timestamp": "2018-10-02T08:39:16.458228203Z",
-            "@metadata":  {
+            "@metadata": {
               document_id: match(DOC_ID_REGEX),
-              event_type:  "overridden",
+              event_type: "overridden",
             },
           )
 
@@ -368,7 +368,7 @@ describe Mobystash::Container do
           .to receive(:get)
           .with("/containers/asdfasdftty/logs",
             { timestamps: true, stdout: true, stderr: true, follow: true, since: "0.000000001" },
-            idempotent:     false,
+            idempotent: false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
@@ -396,7 +396,7 @@ describe Mobystash::Container do
           .to receive(:get)
           .with("/containers/asdfasdfsyslog/logs",
             { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228204" },
-            idempotent:     false,
+            idempotent: false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
@@ -404,19 +404,19 @@ describe Mobystash::Container do
         expect(mock_writer)
           .to receive(:send_event)
           .with(
-            message:      "A",
-            moby:         {
-              name:     "syslog_container",
-              id:       "asdfasdfsyslog",
+            message: "A",
+            moby: {
+              name: "syslog_container",
+              id: "asdfasdfsyslog",
               hostname: "syslog-container",
-              image:    "rspec/syslog_container:latest",
+              image: "rspec/syslog_container:latest",
               image_id: "poiuytrewqsyslog",
-              stream:   "stderr",
+              stream: "stderr",
             },
             "@timestamp": "2018-10-02T08:39:16.458228203Z",
-            "@metadata":  {
+            "@metadata": {
               document_id: match(DOC_ID_REGEX),
-              event_type:  "moby",
+              event_type: "moby",
             },
           )
 
@@ -438,7 +438,7 @@ describe Mobystash::Container do
           .to receive(:get)
           .with("/containers/asdfasdfsyslog/logs",
             { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228204" },
-            idempotent:     false,
+            idempotent: false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
@@ -446,29 +446,29 @@ describe Mobystash::Container do
         expect(mock_writer)
           .to receive(:send_event)
           .with(
-            message:      "hello from syslog!",
-            moby:         {
-              name:     "syslog_container",
-              id:       "asdfasdfsyslog",
+            message: "hello from syslog!",
+            moby: {
+              name: "syslog_container",
+              id: "asdfasdfsyslog",
               hostname: "syslog-container",
-              image:    "rspec/syslog_container:latest",
+              image: "rspec/syslog_container:latest",
               image_id: "poiuytrewqsyslog",
-              stream:   "stderr",
+              stream: "stderr",
             },
-            syslog:       {
-              severity_id:   6,
+            syslog: {
+              severity_id: 6,
               severity_name: "info",
-              facility_id:   18,
+              facility_id: 18,
               facility_name: "local2",
-              hostname:      "sumhost",
-              timestamp:     "Oct 11 10:10:35",
-              program:       "ohai",
-              pid:           3656,
+              hostname: "sumhost",
+              timestamp: "Oct 11 10:10:35",
+              program: "ohai",
+              pid: 3656,
             },
             "@timestamp": "2018-10-02T08:39:16.458228203Z",
-            "@metadata":  {
+            "@metadata": {
               document_id: match(DOC_ID_REGEX),
-              event_type:  "moby",
+              event_type: "moby",
             },
           )
 
@@ -490,7 +490,7 @@ describe Mobystash::Container do
           .to receive(:get)
           .with("/containers/asdfasdfsyslog/logs",
             { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228204" },
-            idempotent:     false,
+            idempotent: false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
@@ -498,27 +498,27 @@ describe Mobystash::Container do
         expect(mock_writer)
           .to receive(:send_event)
           .with(
-            message:      "hello from syslog!",
-            moby:         {
-              name:     "syslog_container",
-              id:       "asdfasdfsyslog",
+            message: "hello from syslog!",
+            moby: {
+              name: "syslog_container",
+              id: "asdfasdfsyslog",
               hostname: "syslog-container",
-              image:    "rspec/syslog_container:latest",
+              image: "rspec/syslog_container:latest",
               image_id: "poiuytrewqsyslog",
-              stream:   "stderr",
+              stream: "stderr",
             },
-            syslog:       {
-              severity_id:   6,
+            syslog: {
+              severity_id: 6,
               severity_name: "info",
-              facility_id:   18,
+              facility_id: 18,
               facility_name: "local2",
-              hostname:      "sumhost",
-              timestamp:     "Oct 11 10:10:35",
+              hostname: "sumhost",
+              timestamp: "Oct 11 10:10:35",
             },
             "@timestamp": "2018-10-02T08:39:16.458228203Z",
-            "@metadata":  {
+            "@metadata": {
               document_id: match(DOC_ID_REGEX),
-              event_type:  "moby",
+              event_type: "moby",
             },
           )
 
@@ -540,7 +540,7 @@ describe Mobystash::Container do
           .to receive(:get)
           .with("/containers/asdfasdfsyslog/logs",
             { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228204" },
-            idempotent:     false,
+            idempotent: false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
@@ -548,27 +548,27 @@ describe Mobystash::Container do
         expect(mock_writer)
           .to receive(:send_event)
           .with(
-            message:      "hello from syslog!",
-            moby:         {
-              name:     "syslog_container",
-              id:       "asdfasdfsyslog",
+            message: "hello from syslog!",
+            moby: {
+              name: "syslog_container",
+              id: "asdfasdfsyslog",
               hostname: "syslog-container",
-              image:    "rspec/syslog_container:latest",
+              image: "rspec/syslog_container:latest",
               image_id: "poiuytrewqsyslog",
-              stream:   "stderr",
+              stream: "stderr",
             },
-            syslog:       {
-              severity_id:   6,
+            syslog: {
+              severity_id: 6,
               severity_name: "info",
-              facility_id:   18,
+              facility_id: 18,
               facility_name: "local2",
-              timestamp:     "Oct 11 10:10:35",
-              program:       "ohai",
+              timestamp: "Oct 11 10:10:35",
+              program: "ohai",
             },
             "@timestamp": "2018-10-02T08:39:16.458228203Z",
-            "@metadata":  {
+            "@metadata": {
               document_id: match(DOC_ID_REGEX),
-              event_type:  "moby",
+              event_type: "moby",
             },
           )
 
@@ -590,7 +590,7 @@ describe Mobystash::Container do
           .to receive(:get)
           .with("/containers/asdfasdfsyslog/logs",
             { timestamps: true, stdout: true, stderr: true, follow: true, since: "1538469556.458228204" },
-            idempotent:     false,
+            idempotent: false,
             response_block: instance_of(Mobystash::MobyChunkParser)
           )
           .and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
@@ -598,26 +598,26 @@ describe Mobystash::Container do
         expect(mock_writer)
           .to receive(:send_event)
           .with(
-            message:      "hellofromsyslog!",
-            moby:         {
-              name:     "syslog_container",
-              id:       "asdfasdfsyslog",
+            message: "hellofromsyslog!",
+            moby: {
+              name: "syslog_container",
+              id: "asdfasdfsyslog",
               hostname: "syslog-container",
-              image:    "rspec/syslog_container:latest",
+              image: "rspec/syslog_container:latest",
               image_id: "poiuytrewqsyslog",
-              stream:   "stderr",
+              stream: "stderr",
             },
-            syslog:       {
-              severity_id:   6,
+            syslog: {
+              severity_id: 6,
               severity_name: "info",
-              facility_id:   18,
+              facility_id: 18,
               facility_name: "local2",
-              timestamp:     "Oct 11 10:10:35",
+              timestamp: "Oct 11 10:10:35",
             },
             "@timestamp": "2018-10-02T08:39:16.458228203Z",
-            "@metadata":  {
+            "@metadata": {
               document_id: match(DOC_ID_REGEX),
-              event_type:  "moby",
+              event_type: "moby",
             },
           )
 

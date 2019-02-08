@@ -15,7 +15,7 @@ describe Mobystash::MobyWatcher do
   let(:env) do
     {
       "LOGSTASH_SERVER" => "speccy",
-      "DOCKER_HOST"     => "unix:///var/run/test.sock"
+      "DOCKER_HOST" => "unix:///var/run/test.sock"
     }
   end
   let(:config) { Mobystash::Config.new(env, logger: logger) }
