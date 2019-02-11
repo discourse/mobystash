@@ -12,6 +12,7 @@ gem 'logstash_writer', '~> 0.0'
 gem 'murmurhash3', '~> 0.1'
 gem 'rbtrace', '~> 0.4'
 gem 'sigdump', require: 'sigdump/setup'
+gem 'stackprof'
 
 group :development do
   gem 'byebug'

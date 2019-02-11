@@ -107,6 +107,7 @@ GEM
       json (>= 1.8, < 3)
       simplecov-html (~> 0.10.0)
     simplecov-html (0.10.2)
+    stackprof (0.2.12)
     thor (0.20.3)
     unicode-display_width (1.4.1)
     yard (0.9.18)
@@ -133,6 +134,7 @@ DEPENDENCIES
   rubocop
   sigdump
   simplecov
+  stackprof
   yard
 
 RUBY VERSION
