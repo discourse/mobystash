@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Mobystash
   # Turn the chunks of data that come out of a Docker log stream into useful
   # lines of logs.

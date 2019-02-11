@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Mobystash
   # Helper to log exceptions.
   module LogException

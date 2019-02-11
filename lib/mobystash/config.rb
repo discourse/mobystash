@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'logger'
 require 'logstash_writer'
 require 'prometheus/client'

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'frankenstein/server'
 require 'frankenstein/process_metrics'
 require 'frankenstein/ruby_gc_metrics'

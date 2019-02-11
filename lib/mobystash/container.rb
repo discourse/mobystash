@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'deep_merge'
 require 'logstash_writer'
 require 'murmurhash3'
