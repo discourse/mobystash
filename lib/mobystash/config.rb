@@ -1,9 +1,5 @@
 # frozen_string_literal: true
-
 require 'logger'
-require 'logstash_writer'
-require 'prometheus/client'
-require 'mobystash/sampler'
 
 module Mobystash
   # Encapsulates all common configuration parameters and shared metrics.
@@ -22,7 +18,7 @@ module Mobystash
 
     attr_reader :logger
 
-    attr_reader :metrics_registry
+    attr_reader :metrics
 
     attr_reader :read_event_exception_counter,
                 :log_entries_read_counter,
@@ -47,26 +43,69 @@ module Mobystash
     #
     # @raise [InvalidEnvironmentError] if any problems are detected with the
     #   environment variables found.
-    #
     def initialize(env, logger:)
       @logger = logger
 
       # Even if we're not actually *running* a metrics server, we still need
       # the registry in place, because conditionalising every metrics-related
       # operation on whether metrics are enabled is just... madness.
-      @metrics_registry = Prometheus::Client::Registry.new
       @sampler = Mobystash::Sampler.new(self)
 
       parse_env(env)
 
-      @read_event_exception_counter = @metrics_registry.counter(:mobystash_moby_read_exceptions_total, "Exception counts while attempting to read log entries from the Moby server")
-      @log_entries_read_counter     = @metrics_registry.counter(:mobystash_log_entries_read_total, "How many log entries have been received from Moby")
-      @log_entries_sent_counter     = @metrics_registry.counter(:mobystash_log_entries_sent_total, "How many log entries have been sent to the LogstashWriter")
-      @last_log_entry_at            = @metrics_registry.gauge(:mobystash_last_log_entry_at_seconds, "The time at which the last log entry was timestamped")
-      @sampled_entries_sent         = @metrics_registry.counter(:mobystash_sampled_entries_sent_total, "The number of sampled entries which have been sent")
-      @sampled_entries_dropped      = @metrics_registry.counter(:mobystash_sampled_entries_dropped_total, "The number of sampled log entries which didn't get sent")
-      @unsampled_entries            = @metrics_registry.counter(:mobystash_unsampled_entries_total, "How many log messages we've seen which didn't match any defined sample keys")
-      @sample_ratios                = @metrics_registry.gauge(:mobystash_sample_ratio, "The current sample ratio for each sample key")
+      @metrics = []
+
+      @read_event_exception_counter = add_counter(
+        "mobystash_moby_read_exceptions_total",
+        "Exception counts while attempting to read log entries from the Moby server"
+      )
+
+      @log_entries_read_counter = add_counter(
+        "mobystash_log_entries_read_total",
+        "How many log entries have been received from Moby"
+      )
+
+      @log_entries_sent_counter = add_counter(
+        "mobystash_log_entries_sent_total",
+        "How many log entries have been sent to the LogstashWriter"
+      )
+
+      @last_log_entry_at = add_gauge(
+        "mobystash_last_log_entry_at_seconds",
+        "The time at which the last log entry was timestamped"
+      )
+
+      @sampled_entries_sent = add_counter(
+        "mobystash_sampled_entries_sent_total",
+        "The number of sampled entries which have been sent"
+      )
+
+      @sampled_entries_dropped = add_counter(
+        "mobystash_sampled_entries_dropped_total",
+        "The number of sampled log entries which didn't get sent"
+      )
+
+      @unsampled_entries = add_counter(
+        "mobystash_unsampled_entries_total",
+        "How many log messages we've seen which didn't match any defined sample keys"
+      )
+
+      @sample_ratios = add_gauge(
+        "mobystash_sample_ratio",
+        "The current sample ratio for each sample key"
+      )
+    end
+
+    def add_counter(name, desc)
+      metric = PrometheusExporter::Metric::Counter.new(name, desc)
+      @metrics << metric
+      metric
+    end
+
+    def add_gauge(name, desc)
+      metric = PrometheusExporter::Metric::Gauge.new(name, desc)
+      @metrics << metric
+      metric
     end
 
     private
@@ -78,7 +117,6 @@ module Mobystash
         # We're shipping a lot of container logs, it seems reasonable to have
         # a larger-than-default buffer in case of accidents.
         backlog: 1_000_000,
-        metrics_registry: @metrics_registry,
       )
 
       @enable_metrics            = pluck_boolean(env, "MOBYSTASH_ENABLE_METRICS", default: false)

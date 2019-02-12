@@ -10,10 +10,10 @@ module Mobystash
       k = matching_key(msg)
 
       if k.nil?
-        @config.unsampled_entries.increment({})
+        @config.unsampled_entries.increment
         [true, {}]
       else
-        key_ratio = @config.sample_ratios.values[sample_key: k]
+        key_ratio = @config.sample_ratios.data[sample_key: k]
         [].tap do |result|
           if key_ratio.nil?
             # A previously unseen sample key is the rarest of all
@@ -62,16 +62,16 @@ module Mobystash
       nominal_out_per_key = nominal_total_out / counts.length
 
       counts.each do |key, tot|
-        @config.sample_ratios.set({ sample_key: key }, [1, tot / nominal_out_per_key].max)
+        @config.sample_ratios.observe([1, tot / nominal_out_per_key].max, sample_key: key)
       end
     end
 
     def sample_count_totals
       Hash.new(0).tap do |counts|
-        @config.sampled_entries_sent.values.each do |k, v|
+        @config.sampled_entries_sent.data.each do |k, v|
           counts[k[:sample_key]] += v
         end
-        @config.sampled_entries_dropped.values.each do |k, v|
+        @config.sampled_entries_dropped.data.each do |k, v|
           counts[k[:sample_key]] += v
         end
       end

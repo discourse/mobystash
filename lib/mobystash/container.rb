@@ -1,11 +1,6 @@
 # frozen_string_literal: true
-
 require 'deep_merge'
-require 'logstash_writer'
 require 'murmurhash3'
-
-require 'mobystash/moby_chunk_parser'
-require 'mobystash/moby_event_worker'
 
 module Mobystash
   # Hoovers up logs for a single container and passes them on to the writer.
@@ -196,9 +191,9 @@ module Mobystash
         @last_log_timestamp, msg = msg.chomp.split(' ', 2)
       end
 
-      @config.last_log_entry_at.set(
-        { container_name: @name, container_id: @id, stream: stream.to_s },
-        Time.strptime(@last_log_timestamp, "%FT%T.%N%Z").to_f
+      @config.last_log_entry_at.observe(
+        Time.strptime(@last_log_timestamp, "%FT%T.%N%Z").to_f,
+        container_name: @name, container_id: @id, stream: stream.to_s
       )
 
       msg, syslog_fields = if @parse_syslog
@@ -211,7 +206,8 @@ module Mobystash
 
       return unless passed
 
-      unless @filter_regex && @filter_regex =~ msg
+      # match? is faster cause no globals are set
+      if !@filter_regex || !msg.match?(@filter_regex)
         event = {
           message: msg,
           "@timestamp": @last_log_timestamp,

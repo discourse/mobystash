@@ -3,7 +3,8 @@ FROM ruby:2.6.1-slim-stretch
 MAINTAINER Matt Palmer "matt.palmer@discourse.org"
 
 RUN useradd mobystash -s /bin/bash -m -U --create-home
-COPY Gemfile Gemfile.lock /home/mobystash/
+
+COPY Gemfile Gemfile.lock mobystash.gemspec /home/mobystash/
 
 ARG GIT_REVISION=invalid-build
 ENV MOBYSTASH_GIT_REVISION=$GIT_REVISION
@@ -16,8 +17,9 @@ RUN docker_group="$(getent group 999 | cut -d : -f 1)" \
   && cd /home/mobystash && su -l mobystash -c "bundle install --deployment --without development" \
   && apt-get purge -y --auto-remove build-essential
 
+COPY lib /home/mobystash/lib
+
 COPY bin/* /usr/local/bin/
-COPY lib/ /usr/local/lib/ruby/2.6.0/
 
 EXPOSE 9367
 LABEL org.discourse.service._prom-exp.port=9367 org.discourse.service._prom-exp.instance=mobystash org.discourse.mobystash.disable=yes

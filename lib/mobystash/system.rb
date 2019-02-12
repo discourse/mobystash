@@ -1,15 +1,6 @@
 # frozen_string_literal: true
-
-require 'frankenstein/server'
-require 'frankenstein/process_metrics'
-require 'frankenstein/ruby_gc_metrics'
 require 'logger'
-require 'logstash_writer'
 
-require 'mobystash/config'
-require 'mobystash/moby_watcher'
-
-# All things Mobystash.
 module Mobystash
   # The core system, responsible for spawning all other threads and routing
   # and handling messages.
@@ -46,12 +37,24 @@ module Mobystash
       @config.logstash_writer.run
 
       if @config.enable_metrics
-        @logger.info(progname) { "Starting metrics server" }
-        Frankenstein::ProcessMetrics.register(@config.metrics_registry)
-        Frankenstein::RubyGCMetrics.register(@config.metrics_registry)
 
-        @metrics_server = Frankenstein::Server.new(port: 9367, logger: @logger, registry: @config.metrics_registry, metrics_prefix: :mobystash_metrics)
-        @metrics_server.run
+        require 'prometheus_exporter/server'
+
+        @logger.info(progname) { "Starting metrics server" }
+
+        # no prefix cause we mix up namespaces here with logstash_writer etc
+        PrometheusExporter::Metric::Base.default_prefix = ""
+        @metrics_server = PrometheusExporter::Server::WebServer.new(port: 9367)
+
+        @config.metrics.each do |metric|
+          @metrics_server.collector.register_metric(metric)
+        end
+
+        @config.logstash_writer.metrics.values.each do |metric|
+          @metrics_server.collector.register_metric(metric)
+        end
+
+        @metrics_server.start
       end
 
       run_existing_containers
@@ -91,7 +94,7 @@ module Mobystash
           @containers.values.each { |c| c.shutdown! }
           write_state_file
           @config.logstash_writer.stop
-          @metrics_server.shutdown if @metrics_server
+          @metrics_server.stop if @metrics_server
           break
         else
           @logger.error(progname) { "SHOULDN'T HAPPEN: docker watcher sent an unrecognized message: #{item.inspect}.  This is a bug, please report it." }

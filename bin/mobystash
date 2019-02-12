@@ -11,10 +11,9 @@ end
 require 'sigdump'
 Sigdump.setup('SIGCONT', '+')
 
-require 'mobystash/system'
 require 'logger'
-require 'loggerstash'
 require 'rbtrace'
+require 'mobystash'
 
 logger = Logger.new($stderr)
 logger.level = Logger.const_get((ENV['MOBYSTASH_LOG_LEVEL'] || "INFO").upcase)

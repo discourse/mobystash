@@ -1,7 +1,5 @@
 require 'docker-api'
 
-require 'mobystash/container'
-
 module Mobystash
   # Keep an eye on all events being emitted by the Moby server, and forward
   # relevant ones to the main System by means of a message queue.
@@ -17,12 +15,19 @@ module Mobystash
       @logger = @config.logger
       @last_event_time = Time.now.to_i
 
-      @event_count = @config.metrics_registry.counter(:mobystash_moby_events_total, "How many docker events we have seen and processed")
+      @event_count = @config.add_counter(
+        "mobystash_moby_events_total",
+        "How many docker events we have seen and processed"
+      )
+
       @event_count.increment({ type: "ignored" }, 0)
       @event_count.increment({ type: "create"  }, 0)
       @event_count.increment({ type: "destroy" }, 0)
 
-      @event_errors = @config.metrics_registry.counter(:mobystash_moby_watch_exceptions_total, "How many exceptions have been raised while handling docker events")
+      @event_errors = @config.add_counter(
+        "mobystash_moby_watch_exceptions_total",
+        "How many exceptions have been raised while handling docker events"
+      )
 
       super
     end

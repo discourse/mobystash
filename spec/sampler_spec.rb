@@ -11,10 +11,10 @@ describe Mobystash::Sampler do
   let(:mock_config)     { instance_double(Mobystash::Config) }
   let(:sample_ratio)    { 10 }
   let(:sample_keys)     { [] }
-  let(:unsampled)       { instance_double(Prometheus::Client::Counter, "unsampled") }
-  let(:samples_sent)    { instance_double(Prometheus::Client::Counter, "samples_sent") }
-  let(:samples_dropped) { instance_double(Prometheus::Client::Counter, "samples_dropped") }
-  let(:sample_ratios)   { instance_double(Prometheus::Client::Gauge, "sample_ratios") }
+  let(:unsampled)       { instance_double(PrometheusExporter::Metric::Counter, "unsampled") }
+  let(:samples_sent)    { instance_double(PrometheusExporter::Metric::Counter, "samples_sent") }
+  let(:samples_dropped) { instance_double(PrometheusExporter::Metric::Counter, "samples_dropped") }
+  let(:sample_ratios)   { instance_double(PrometheusExporter::Metric::Gauge, "sample_ratios") }
   let(:sent_values)     { {} }
   let(:dropped_values)  { {} }
   let(:ratio_values)    { {} }
@@ -31,9 +31,9 @@ describe Mobystash::Sampler do
     allow(samples_sent).to receive(:increment)
     allow(samples_dropped).to receive(:increment)
 
-    allow(samples_sent).to receive(:values).and_return(Hash[sent_values.map { |k, v| [{ sample_key: k }, v] }])
-    allow(samples_dropped).to receive(:values).and_return(Hash[dropped_values.map { |k, v| [{ sample_key: k }, v] }])
-    allow(sample_ratios).to receive(:values).and_return(Hash[ratio_values.map { |k, v| [{ sample_key: k }, v] }])
+    allow(samples_sent).to receive(:data).and_return(Hash[sent_values.map { |k, v| [{ sample_key: k }, v] }])
+    allow(samples_dropped).to receive(:data).and_return(Hash[dropped_values.map { |k, v| [{ sample_key: k }, v] }])
+    allow(sample_ratios).to receive(:data).and_return(Hash[ratio_values.map { |k, v| [{ sample_key: k }, v] }])
   end
 
   describe "#calculate_key_ratios" do
@@ -50,7 +50,7 @@ describe Mobystash::Sampler do
       let(:dropped_values) { { "foo" => 45 } }
 
       it "gives a sample ratio equal to the overall ratio" do
-        expect(sample_ratios).to receive(:set).with({ sample_key: "foo" }, within(0.001).of(10))
+        expect(sample_ratios).to receive(:observe).with(within(0.001).of(10), sample_key: "foo")
 
         sampler.__send__(:calculate_ratios)
       end
@@ -61,8 +61,8 @@ describe Mobystash::Sampler do
       let(:dropped_values) { { "foo" => 45, "bar" => 90 } }
 
       it "gives appropriate sample ratios for each key" do
-        expect(sample_ratios).to receive(:set).with({ sample_key: "foo" }, within(0.001).of(6.6666))
-        expect(sample_ratios).to receive(:set).with({ sample_key: "bar" }, within(0.001).of(13.3333))
+        expect(sample_ratios).to receive(:observe).with(within(0.001).of(6.6666), sample_key: "foo")
+        expect(sample_ratios).to receive(:observe).with(within(0.001).of(13.3333), sample_key: "bar")
 
         sampler.__send__(:calculate_ratios)
       end
@@ -73,9 +73,9 @@ describe Mobystash::Sampler do
       let(:dropped_values) { { "foo" => 450, "bar" => 900 } }
 
       it "gives appropriate sample ratios for each key" do
-        expect(sample_ratios).to receive(:set).with({ sample_key: "foo" }, within(0.001).of(9.9933))
-        expect(sample_ratios).to receive(:set).with({ sample_key: "bar" }, within(0.001).of(19.9866))
-        expect(sample_ratios).to receive(:set).with({ sample_key: "bunyip" }, within(0.001).of(1))
+        expect(sample_ratios).to receive(:observe).with(within(0.001).of(9.9933), sample_key: "foo")
+        expect(sample_ratios).to receive(:observe).with(within(0.001).of(19.9866), sample_key: "bar")
+        expect(sample_ratios).to receive(:observe).with(within(0.001).of(1), sample_key: "bunyip")
 
         sampler.__send__(:calculate_ratios)
       end
@@ -96,7 +96,7 @@ describe Mobystash::Sampler do
       end
 
       it "increments the unsampled counter" do
-        expect(unsampled).to receive(:increment).with({})
+        expect(unsampled).to receive(:increment)
 
         sampler.sample("foo")
       end

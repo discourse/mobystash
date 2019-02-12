@@ -2,17 +2,17 @@ ruby '> 2.3', '< 2.7'
 
 source 'https://rubygems.org'
 
+gem 'mobystash', path: "."
+
 gem 'deep_merge'
 gem 'docker-api', '~> 1.33'
 # See https://github.com/swipely/docker-api/issues/409
 gem 'excon', '~> 0.59'
-gem 'frankenstein', '~> 1.1'
-gem 'loggerstash', '~> 0.0.2'
-gem 'logstash_writer', '~> 0.0'
 gem 'murmurhash3', '~> 0.1'
 gem 'rbtrace', '~> 0.4'
 gem 'sigdump', require: 'sigdump/setup'
 gem 'stackprof'
+gem 'prometheus_exporter'
 
 group :development do
   gem 'byebug'

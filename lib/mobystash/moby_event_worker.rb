@@ -3,8 +3,6 @@
 require 'docker-api'
 require 'thread'
 
-require 'mobystash/log_exception'
-
 module Mobystash
   # A module containing the common code needed to process some sort of event
   # stream from Moby in a background thread, handling starting and stopping
