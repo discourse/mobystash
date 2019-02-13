@@ -39,12 +39,19 @@ module Mobystash
       if @config.enable_metrics
 
         require 'prometheus_exporter/server'
+        require 'prometheus_exporter/client'
+        require 'prometheus_exporter/instrumentation'
 
         @logger.info(progname) { "Starting metrics server" }
 
         # no prefix cause we mix up namespaces here with logstash_writer etc
         PrometheusExporter::Metric::Base.default_prefix = ""
         @metrics_server = PrometheusExporter::Server::WebServer.new(port: 9367)
+
+        PrometheusExporter::Client.default = PrometheusExporter::LocalClient.new(collector:  @metrics_server.collector)
+
+        # basic process instrumentation including rss, gc stats
+        PrometheusExporter::Instrumentation::Process.start
 
         @config.metrics.each do |metric|
           @metrics_server.collector.register_metric(metric)
@@ -94,7 +101,11 @@ module Mobystash
           @containers.values.each { |c| c.shutdown! }
           write_state_file
           @config.logstash_writer.stop
-          @metrics_server.stop if @metrics_server
+
+          if @metrics_server
+            PrometheusExporter::Instrumentation::Process.stop
+            @metrics_server.stop
+          end
           break
         else
           @logger.error(progname) { "SHOULDN'T HAPPEN: docker watcher sent an unrecognized message: #{item.inspect}.  This is a bug, please report it." }
