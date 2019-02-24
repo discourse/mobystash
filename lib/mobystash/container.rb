@@ -170,7 +170,7 @@ module Mobystash
             idempotent: false,
             response_block: chunk_parser
           )
-        rescue Docker::Error::NotFoundError
+        rescue Docker::Error::NotFoundError, Docker::Error::ServerError
           # This happens when the container terminates, but we beat the System
           # in the race and we call Docker::Container.get before the System
           # shuts us down.  Since we'll be terminated soon anyway, we may as
