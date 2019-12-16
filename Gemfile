@@ -7,7 +7,7 @@ gem 'mobystash', path: "."
 gem 'deep_merge'
 gem 'docker-api', '~> 1.33'
 # See https://github.com/swipely/docker-api/issues/409
-gem 'excon', '~> 0.59'
+gem 'excon', '~> 0.71'
 gem 'murmurhash3', '~> 0.1'
 gem 'rbtrace', '~> 0.4'
 gem 'sigdump', require: 'sigdump/setup'

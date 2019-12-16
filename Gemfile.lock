@@ -15,7 +15,7 @@ GEM
     docker-api (1.34.2)
       excon (>= 0.47.0)
       multi_json
-    excon (0.62.0)
+    excon (0.71.0)
     ffi (1.10.0)
     formatador (0.2.5)
     guard (2.15.0)
@@ -114,7 +114,7 @@ DEPENDENCIES
   byebug
   deep_merge
   docker-api (~> 1.33)
-  excon (~> 0.59)
+  excon (~> 0.71)
   guard-rspec
   guard-rubocop
   mobystash!
