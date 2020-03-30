@@ -1,4 +1,4 @@
-FROM ruby:2.6.1-slim-stretch
+FROM ruby:2.6-slim-buster
 
 MAINTAINER Matt Palmer "matt.palmer@discourse.org"
 
