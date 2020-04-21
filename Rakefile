@@ -1,7 +1,6 @@
 exec(*(["bundle", "exec", $PROGRAM_NAME] + ARGV)) if ENV['BUNDLE_GEMFILE'].nil?
 
 task default: :test
-task default: :rubocop
 task default: :doc_stats
 
 begin
@@ -28,10 +27,6 @@ def docker_tagify(tag)
 end
 
 require 'yard'
-
-task :rubocop do
-  sh "rubocop"
-end
 
 task :doc_stats do
   sh "yard stats --list-undoc"

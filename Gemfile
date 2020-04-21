@@ -23,6 +23,8 @@ group :development do
   gem 'redcarpet'
   gem 'rspec'
   gem 'rubocop'
+  gem 'rubocop-discourse'
+  gem 'rubocop-rspec'
   gem 'simplecov'
   gem 'yard'
 end
