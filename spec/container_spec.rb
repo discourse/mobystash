@@ -55,7 +55,7 @@ describe Mobystash::Container do
       allow(mock_conn).to receive(:get).and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
       allow(Docker::Container).to receive(:new).with(instance_of(Docker::Connection), instance_of(Hash)).and_call_original
       allow(Docker::Container).to receive(:get).with(container_id, {}, mock_conn).and_return(mock_moby_container)
-      allow(mock_moby_container).to receive(:info).and_return("Config" => { "Tty" => false })
+      allow(mock_moby_container).to receive(:info).and_return("Config" => { "Tty" => false }, "State" => { "Running" => true })
 
       # I'm a bit miffed we have to do this; to my mind, a double should
       # lie a little
@@ -354,7 +354,7 @@ describe Mobystash::Container do
       let(:container_id)   { "asdfasdftty" }
 
       before :each do
-        allow(mock_moby_container).to receive(:info).and_return("Config" => { "Tty" => true })
+        allow(mock_moby_container).to receive(:info).and_return("Config" => { "Tty" => true }, "State" => { "Running" => true })
       end
 
       it "asks for a pro-TTY chunk parser" do
@@ -671,7 +671,7 @@ describe Mobystash::Container do
       allow(Docker::Connection).to receive(:new).with("unix:///var/run/docker.sock", read_timeout: 3600).and_return(mock_conn)
       allow(Docker::Container).to receive(:new).with(instance_of(Docker::Connection), instance_of(Hash)).and_call_original
       allow(Docker::Container).to receive(:get).with(container_id, {}, mock_conn).and_return(mock_moby_container)
-      allow(mock_moby_container).to receive(:info).and_return("Config" => { "Tty" => false })
+      allow(mock_moby_container).to receive(:info).and_return("Config" => { "Tty" => false }, "State" => { "Running" => true })
 
       # I'm a bit miffed we have to do this; to my mind, a double should
       # lie a little

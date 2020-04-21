@@ -145,31 +145,36 @@ module Mobystash
 
     def process_events(conn)
       if @capture_logs
-        @logger.debug(progname) { "Capturing logs since #{@last_log_timestamp}" }
-
         begin
-          # The implementation of Docker::Container#streaming_logs has a
-          # *terribad* memory leak, in that every log entry that gets received
-          # gets stored in a couple of arrays, which only gets cleared when
-          # the call to #streaming_logs finishes... which is bad, because
-          # we like these to go on for a long time.  So, instead, we need to
-          # do our own thing directly, by hand.
-          chunk_parser = Mobystash::MobyChunkParser.new(tty: tty?(conn)) do |msg, s|
-            send_event(msg, s)
-          end
+          unless Docker::Container.get(@id, {}, conn).info.fetch("State", {}).fetch("Running")
+            @logger.debug(progname) { "Container is not running; waiting for it to start or be destroyed" }
+            wait_for_container_to_start(conn)
+          else
+            @logger.debug(progname) { "Capturing logs since #{@last_log_timestamp}" }
 
-          conn.get(
-            "/containers/#{@id}/logs",
-            {
-              since: (Time.strptime(@last_log_timestamp, "%FT%T.%N%Z") + ONE_NANOSECOND).strftime("%s.%N"),
-              timestamps: true,
-              follow: true,
-              stdout: true,
-              stderr: true,
-            },
-            idempotent: false,
-            response_block: chunk_parser
-          )
+            # The implementation of Docker::Container#streaming_logs has a
+            # *terribad* memory leak, in that every log entry that gets received
+            # gets stored in a couple of arrays, which only gets cleared when
+            # the call to #streaming_logs finishes... which is bad, because
+            # we like these to go on for a long time.  So, instead, we need to
+            # do our own thing directly, by hand.
+            chunk_parser = Mobystash::MobyChunkParser.new(tty: tty?(conn)) do |msg, s|
+              send_event(msg, s)
+            end
+
+            conn.get(
+              "/containers/#{@id}/logs",
+              {
+                since: (Time.strptime(@last_log_timestamp, "%FT%T.%N%Z") + ONE_NANOSECOND).strftime("%s.%N"),
+                timestamps: true,
+                follow: true,
+                stdout: true,
+                stderr: true,
+              },
+              idempotent: false,
+              response_block: chunk_parser
+            )
+          end
         rescue Docker::Error::NotFoundError, Docker::Error::ServerError
           # This happens when the container terminates, but we beat the System
           # in the race and we call Docker::Container.get before the System
@@ -181,6 +186,18 @@ module Mobystash
       else
         @logger.debug(progname) { "Not capturing logs because mobystash is disabled" }
         sleep
+      end
+    end
+
+    def wait_for_container_to_start(conn)
+      @logger.debug(progname) { "Asking for events since @last_log_timestamp}" }
+
+      Docker::Event.since(@last_log_timestamp, {}, conn) do |event|
+        @last_log_timestamp = event.time
+
+        @logger.debug(progname) { "Docker event@#{event.timeNano}: #{event.Type}.#{event.Action} on #{event.ID}" }
+
+        break if event.Type == "container" && event.ID == @id
       end
     end
 
