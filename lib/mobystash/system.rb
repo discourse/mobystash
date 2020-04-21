@@ -170,7 +170,7 @@ module Mobystash
           sleep @config.state_checkpoint_interval
           @queue.push([:checkpoint_state])
         end
-      end
+      end.tap { |t| t.report_on_exception = false }
     end
 
     def write_state_file

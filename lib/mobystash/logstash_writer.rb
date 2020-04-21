@@ -156,7 +156,7 @@ class LogstashWriter
         @worker_thread = Thread.new do
           Thread.current.name = "LogstashWriter"
           write_loop
-        end
+        end.tap { |t| t.report_on_exception = false }
       end
     end
 
