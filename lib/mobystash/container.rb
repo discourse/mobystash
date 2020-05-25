@@ -75,6 +75,12 @@ module Mobystash
       parse_labels(docker_data.info["Config"]["Labels"])
 
       super
+
+      @logger.debug(progname) do
+        (["Created new container listener.  Instance variables:"] + %i{@name @capture_logs @parse_syslog @tags @last_log_timestamp}.map do |iv|
+          "#{iv}=#{instance_variable_get(iv).inspect}"
+        end).join("\n  ")
+      end
     end
 
     # The timestamp, in RFC3339 format, of the last log message which was
