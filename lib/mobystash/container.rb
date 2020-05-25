@@ -56,6 +56,13 @@ module Mobystash
 
       @name = (docker_data.info["Name"] || docker_data.info["Names"].first).sub(/\A\//, '')
 
+      if docker_data.info["Config"]["Tty"]
+        @config.log_entries_read_counter.increment({ container_name: @name, container_id: @id, stream: "tty" }, 0)
+      else
+        @config.log_entries_read_counter.increment({ container_name: @name, container_id: @id, stream: "stdout" }, 0)
+        @config.log_entries_read_counter.increment({ container_name: @name, container_id: @id, stream: "stderr" }, 0)
+      end
+
       @capture_logs = true
       @parse_syslog = false
 
@@ -150,6 +157,13 @@ module Mobystash
     end
 
     def process_events(conn)
+      if tty?(conn)
+        @config.log_entries_sent_counter.increment({ container_name: @name, container_id: @id, stream: "tty" }, 0)
+      else
+        @config.log_entries_sent_counter.increment({ container_name: @name, container_id: @id, stream: "stdout" }, 0)
+        @config.log_entries_sent_counter.increment({ container_name: @name, container_id: @id, stream: "stderr" }, 0)
+      end
+
       if @capture_logs
         begin
           unless Docker::Container.get(@id, {}, conn).info.fetch("State", {}).fetch("Running")
