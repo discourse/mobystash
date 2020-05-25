@@ -6,9 +6,6 @@ RUN useradd mobystash -s /bin/bash -m -U --create-home
 
 COPY Gemfile Gemfile.lock mobystash.gemspec /home/mobystash/
 
-ARG GIT_REVISION=invalid-build
-ENV MOBYSTASH_GIT_REVISION=$GIT_REVISION
-
 RUN DEBIAN_FRONTEND=noninteractive apt-get update \
 	&& DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade \
 	&& DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends \
@@ -26,6 +23,9 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
 	&& ( find /var/lib/apt/lists -mindepth 1 -maxdepth 1 -delete || true ) \
 	&& ( find /var/tmp -mindepth 1 -maxdepth 1 -delete || true ) \
 	&& ( find /tmp -mindepth 1 -maxdepth 1 -delete || true )
+
+ARG GIT_REVISION=invalid-build
+ENV MOBYSTASH_GIT_REVISION=$GIT_REVISION
 
 COPY lib /home/mobystash/lib
 
