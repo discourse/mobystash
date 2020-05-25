@@ -190,9 +190,9 @@ module Mobystash
     end
 
     def wait_for_container_to_start(conn)
-      @logger.debug(progname) { "Asking for events since @last_log_timestamp}" }
+      @logger.debug(progname) { "Asking for events since #{@last_log_timestamp}" }
 
-      Docker::Event.since(@last_log_timestamp, {}, conn) do |event|
+      Docker::Event.since(Time.strptime(@last_log_timestamp, "%FT%T.%N%Z") + ONE_NANOSECOND.strftime("%s.%N"), {}, conn) do |event|
         @last_log_timestamp = event.time
 
         @logger.debug(progname) { "Docker event@#{event.timeNano}: #{event.Type}.#{event.Action} on #{event.ID}" }
