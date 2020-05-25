@@ -58,6 +58,6 @@ namespace :docker do
   desc "Publish a new docker image"
   task publish: :build do
     sh "docker push discourse/mobystash:#{tag}"
-    sh "docker push discourse/mobystash"
+    sh "docker push discourse/mobystash:latest"
   end
 end
