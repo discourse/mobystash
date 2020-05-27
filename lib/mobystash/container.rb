@@ -157,16 +157,16 @@ module Mobystash
     end
 
     def process_events(conn)
-      if tty?(conn)
-        @config.log_entries_sent_counter.increment({ container_name: @name, container_id: @id, stream: "tty" }, 0)
-      else
-        @config.log_entries_sent_counter.increment({ container_name: @name, container_id: @id, stream: "stdout" }, 0)
-        @config.log_entries_sent_counter.increment({ container_name: @name, container_id: @id, stream: "stderr" }, 0)
-      end
+      begin
+        if tty?(conn)
+          @config.log_entries_sent_counter.increment({ container_name: @name, container_id: @id, stream: "tty" }, 0)
+        else
+          @config.log_entries_sent_counter.increment({ container_name: @name, container_id: @id, stream: "stdout" }, 0)
+          @config.log_entries_sent_counter.increment({ container_name: @name, container_id: @id, stream: "stderr" }, 0)
+        end
 
-      if @capture_logs
-        begin
-          unless Docker::Container.get(@id, {}, conn).info.fetch("State", {}).fetch("Running")
+        if @capture_logs
+          unless Docker::Container.get(@id, {}, conn).info.fetch("State", {})["Status"] == "running"
             @logger.debug(progname) { "Container is not running; waiting for it to start or be destroyed" }
             wait_for_container_to_start(conn)
           else
@@ -195,24 +195,24 @@ module Mobystash
               response_block: chunk_parser
             )
           end
-        rescue Docker::Error::NotFoundError, Docker::Error::ServerError
-          # This happens when the container terminates, but we beat the System
-          # in the race and we call Docker::Container.get before the System
-          # shuts us down.  Since we'll be terminated soon anyway, we may as
-          # well do it first.
-          @logger.info(progname) { "Container has terminated." }
-          raise TerminateEventWorker
+        else
+          @logger.debug(progname) { "Not capturing logs because mobystash is disabled" }
+          sleep
         end
-      else
-        @logger.debug(progname) { "Not capturing logs because mobystash is disabled" }
-        sleep
+      rescue Docker::Error::NotFoundError, Docker::Error::ServerError
+        # This happens when the container terminates, but we beat the System
+        # in the race and we call Docker::Container.get before the System
+        # shuts us down.  Since we'll be terminated soon anyway, we may as
+        # well do it first.
+        @logger.info(progname) { "Container has terminated." }
+        raise TerminateEventWorker
       end
     end
 
     def wait_for_container_to_start(conn)
       @logger.debug(progname) { "Asking for events since #{@last_log_timestamp}" }
 
-      Docker::Event.since(Time.strptime(@last_log_timestamp, "%FT%T.%N%Z") + ONE_NANOSECOND.strftime("%s.%N"), {}, conn) do |event|
+      Docker::Event.since((Time.strptime(@last_log_timestamp, "%FT%T.%N%Z") + ONE_NANOSECOND).strftime("%s.%N"), {}, conn) do |event|
         @last_log_timestamp = event.time
 
         @logger.debug(progname) { "Docker event@#{event.timeNano}: #{event.Type}.#{event.Action} on #{event.ID}" }
