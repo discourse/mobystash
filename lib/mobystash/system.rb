@@ -156,7 +156,7 @@ module Mobystash
       # Thanks, Docker!
       Docker::Container.all({}, docker_connection).each do |c|
         begin
-          @containers[c.id] = Mobystash::Container.new(Docker::Container.get(c.id, {}, docker_connection), @config, last_log_timestamp: state_data[c.id])
+          @containers[c.id] = Mobystash::Container.new(Docker::Container.get(c.id, {}, docker_connection), @config, last_log_time: state_data[c.id] && Time.strptime(state_data[c.id], "%FT%T.%N%Z"))
           @containers[c.id].run!
         rescue Docker::Error::NotFoundError
           nil

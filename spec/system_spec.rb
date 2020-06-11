@@ -143,7 +143,7 @@ describe Mobystash::System do
         allow(Docker::Connection).to receive(:new).with("unix:///var/run/test.sock", {}).and_return(mock_conn)
 
         allow(Docker::Container).to receive(:get).with("asdfasdfbasic", {}, mock_conn).and_return(docker_data)
-        allow(Mobystash::Container).to receive(:new).with(docker_data, system.config, last_log_timestamp: nil).and_return(mobystash_container)
+        allow(Mobystash::Container).to receive(:new).with(docker_data, system.config, last_log_time: nil).and_return(mobystash_container)
         allow(mobystash_container).to receive(:shutdown!)
         allow(mobystash_container).to receive(:last_log_timestamp).and_return("xyzzy")
       end
@@ -316,7 +316,7 @@ describe Mobystash::System do
 
       expect(Mobystash::Container)
         .to receive(:new)
-        .with(moby_container, system.config, last_log_timestamp: nil)
+        .with(moby_container, system.config, last_log_time: nil)
         .and_return(mobystash_container = instance_double(Mobystash::Container))
       expect(mobystash_container).to receive(:run!)
 
@@ -344,7 +344,7 @@ describe Mobystash::System do
 
       expect(Mobystash::Container)
         .to receive(:new)
-        .with(moby_container, system.config, last_log_timestamp: "2018-12-12T12:12:12.123456789Z")
+        .with(moby_container, system.config, last_log_time: Time.at(1544616732 + Rational(123_456_789, 1_000_000_000)).utc)
         .and_return(mobystash_container = instance_double(Mobystash::Container))
       expect(mobystash_container).to receive(:run!)
 
@@ -360,7 +360,7 @@ describe Mobystash::System do
 
       expect(Mobystash::Container)
         .to receive(:new)
-        .with(moby_container, system.config, last_log_timestamp: nil)
+        .with(moby_container, system.config, last_log_time: nil)
         .and_return(mobystash_container = instance_double(Mobystash::Container))
       expect(mobystash_container).to receive(:run!)
 
@@ -377,7 +377,7 @@ describe Mobystash::System do
 
       expect(Mobystash::Container)
         .to receive(:new)
-        .with(moby_container, system.config, last_log_timestamp: nil)
+        .with(moby_container, system.config, last_log_time: nil)
         .and_return(mobystash_container = instance_double(Mobystash::Container))
       expect(mobystash_container).to receive(:run!)
 

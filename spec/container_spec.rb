@@ -17,7 +17,8 @@ describe Mobystash::Container do
   let(:mock_writer)         { instance_double(LogstashWriter) }
   let(:config)              { Mobystash::Config.new(env, logger: logger) }
   let(:docker_data)         { container_fixture(container_name) }
-  let(:container)           { Mobystash::Container.new(docker_data, config) }
+  let(:last_log_time)       { nil }
+  let(:container)           { Mobystash::Container.new(docker_data, config, last_log_time: last_log_time) }
   let(:mock_conn)           { instance_double(Docker::Connection) }
   let(:mock_moby_container) { instance_double(Docker::Container) }
 
@@ -39,9 +40,9 @@ describe Mobystash::Container do
       end
     end
 
-    context "with a last_log_timestamp" do
+    context "with a last_log_time" do
       let(:container_name) { "basic_container" }
-      let(:container) { Mobystash::Container.new(docker_data, config, last_log_timestamp: "2009-06-03T09:06:03.987654321Z") }
+      let(:last_log_time)  { Time.at(1244019963 + Rational(987_654_321, 1_000_000_000)).utc }
 
       it "overrides the last_log_timestamp" do
         expect(container.last_log_timestamp).to eq("2009-06-03T09:06:03.987654321Z")
