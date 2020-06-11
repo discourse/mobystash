@@ -56,13 +56,6 @@ module Mobystash
 
       @name = (docker_data.info["Name"] || docker_data.info["Names"].first).sub(/\A\//, '')
 
-      if docker_data.info["Config"]["Tty"]
-        @config.log_entries_read_counter.increment({ container_name: @name, container_id: @id, stream: "tty" }, 0)
-      else
-        @config.log_entries_read_counter.increment({ container_name: @name, container_id: @id, stream: "stdout" }, 0)
-        @config.log_entries_read_counter.increment({ container_name: @name, container_id: @id, stream: "stderr" }, 0)
-      end
-
       @capture_logs = true
       @parse_syslog = false
 
@@ -82,6 +75,15 @@ module Mobystash
       parse_labels(docker_data.info["Config"]["Labels"])
 
       super
+
+      if @capture_logs
+        if docker_data.info["Config"]["Tty"]
+          @config.log_entries_read_counter.increment({ container_name: @name, container_id: @id, stream: "tty" }, 0)
+        else
+          @config.log_entries_read_counter.increment({ container_name: @name, container_id: @id, stream: "stdout" }, 0)
+          @config.log_entries_read_counter.increment({ container_name: @name, container_id: @id, stream: "stderr" }, 0)
+        end
+      end
 
       @logger.debug(progname) do
         (["Created new container listener.  Instance variables:"] + %i{@name @capture_logs @parse_syslog @tags @last_log_time}.map do |iv|
