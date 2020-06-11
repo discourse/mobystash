@@ -156,7 +156,20 @@ module Mobystash
       # Thanks, Docker!
       Docker::Container.all({}, docker_connection).each do |c|
         begin
-          @containers[c.id] = Mobystash::Container.new(Docker::Container.get(c.id, {}, docker_connection), @config, last_log_time: state_data[c.id] && Time.strptime(state_data[c.id], "%FT%T.%N%Z"))
+          last_log_time = case state_data[c.id]
+                          when String
+                            Time.strptime(state_data[c.id], "%FT%T.%N%Z")
+                          when Numeric
+                            Time.at(state_data[c.id]).utc
+                          when Time
+                            state_data[c.id]
+                          when NilClass
+                            nil
+                          else
+                            raise ArgumentError, "Unknown type for state data: #{state_data[c.id].inspect}"
+                          end
+
+          @containers[c.id] = Mobystash::Container.new(Docker::Container.get(c.id, {}, docker_connection), @config, last_log_time: last_log_time)
           @containers[c.id].run!
         rescue Docker::Error::NotFoundError
           nil
