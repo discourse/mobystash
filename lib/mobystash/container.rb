@@ -264,7 +264,7 @@ module Mobystash
         event = event.deep_merge(metadata)
 
         @config.logstash_writer.send_event(event)
-        @config.log_entries_sent_counter.increment(container_name: @name, container_id: @id, stream: stream)
+        @config.log_entries_sent_counter.increment(container_name: @name, container_id: @id, stream: stream.to_s)
       end
     end
 
