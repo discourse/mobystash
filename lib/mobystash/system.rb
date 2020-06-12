@@ -77,7 +77,7 @@ module Mobystash
         when :created
           begin
             unless @containers[item.last]
-              @containers[item.last] = Mobystash::Container.new(Docker::Container.get(item.last, {}, docker_connection), @config)
+              @containers[item.last] = Mobystash::Container.new(Docker::Container.get(item.last, {}, docker_connection), @config, last_log_time: nil)
               @containers[item.last].run!
             end
           rescue Docker::Error::NotFoundError
