@@ -222,7 +222,7 @@ module Mobystash
     end
 
     def send_event(msg, stream)
-      @config.log_entries_read_counter.increment(container_name: @name, container_id: @id, stream: stream)
+      @config.log_entries_read_counter.increment(container_name: @name, container_id: @id, stream: stream.to_s)
 
       @llt_mutex.synchronize do
         @last_log_timestamp, msg = msg.chomp.split(' ', 2)
