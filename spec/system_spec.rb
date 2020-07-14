@@ -48,7 +48,7 @@ describe Mobystash::System do
     allow(mock_watcher).to receive(:shutdown!)
     allow(mock_writer).to receive(:stop)
     allow(mock_writer).to receive(:metrics).and_return({})
-    allow(File).to receive(:write)
+    allow(system).to receive(:write_state_file)
   end
 
   describe "#reconnect!" do
@@ -246,6 +246,7 @@ describe Mobystash::System do
           expect(c1).to receive(:last_log_timestamp).ordered
           expect(c2).to receive(:last_log_timestamp).ordered
 
+          allow(system).to receive(:write_state_file).and_call_original
           expect(File).to receive(:open).with("./mobystash_state.dump.new", File::WRONLY | File::CREAT | File::TRUNC, 0600).and_yield(mock_file = instance_double(File))
           expect(mock_file).to receive(:write).with(
             Marshal.dump(
