@@ -104,6 +104,27 @@ module Mobystash
       @llt_mutex.synchronize { @last_log_time + ONE_NANOSECOND }
     end
 
+    def shutdown!
+      @config.log_entries_read_counter.remove({ container_name: @name, container_id: @id, stream: "tty" })
+      @config.log_entries_read_counter.remove({ container_name: @name, container_id: @id, stream: "stdout" })
+      @config.log_entries_read_counter.remove({ container_name: @name, container_id: @id, stream: "stderr" })
+      @config.log_entries_sent_counter.remove({ container_name: @name, container_id: @id, stream: "tty" })
+
+      @config.log_entries_sent_counter.remove({ container_name: @name, container_id: @id, stream: "stdout" })
+      @config.log_entries_sent_counter.remove({ container_name: @name, container_id: @id, stream: "stderr" })
+
+      @config.last_log_entry_at.remove({ container_name: @name, container_id: @id, stream: "stderr" })
+      @config.last_log_entry_at.remove({ container_name: @name, container_id: @id, stream: "stdout" })
+
+      @config.read_event_exception_counter.to_h.each do |label, _|
+        if (label[:container_id] == @id)
+          @config.read_event_exception_counter.remove(label)
+        end
+      end
+
+      super
+    end
+
     private
 
     def progname
