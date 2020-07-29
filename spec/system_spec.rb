@@ -152,7 +152,7 @@ describe Mobystash::System do
         it "tells the container to go publish itself" do
           expect(mock_queue).to receive(:pop).and_return([:created, "asdfasdfbasic"])
           expect(Docker::Container).to receive(:get).with("asdfasdfbasic", {}, mock_conn).and_return(docker_data)
-          expect(Mobystash::Container).to receive(:new).with(docker_data, system.config).and_return(mobystash_container)
+          expect(Mobystash::Container).to receive(:new).with(docker_data, system.config, last_log_time: nil).and_return(mobystash_container)
           expect(mobystash_container).to receive(:run!)
 
           system.run
