@@ -115,6 +115,7 @@ module Mobystash
 
       @config.last_log_entry_at.remove({ container_name: @name, container_id: @id, stream: "stderr" })
       @config.last_log_entry_at.remove({ container_name: @name, container_id: @id, stream: "stdout" })
+      @config.last_log_entry_at.remove({ container_name: @name, container_id: @id, stream: "tty" })
 
       @config.read_event_exception_counter.to_h.each do |label, _|
         if (label[:container_id] == @id)
