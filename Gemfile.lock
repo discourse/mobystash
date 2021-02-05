@@ -67,7 +67,7 @@ GEM
       ffi (>= 1.0.6)
       msgpack (>= 0.4.3)
       optimist (>= 3.0.0)
-    redcarpet (3.5.0)
+    redcarpet (3.5.1)
     regexp_parser (1.7.1)
     rexml (3.2.4)
     rspec (3.9.0)
