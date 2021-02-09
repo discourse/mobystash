@@ -254,7 +254,7 @@ describe LogstashWriter do
       expect(mock_resolv).to receive(:getaddresses).with("logstash").and_return([Resolv::IPv4.create("192.0.2.42"), Resolv::IPv6.create("2001:db8::42")])
 
       expect(TCPSocket).to receive(:new).with("192.0.2.42", 5151)
-      expect(TCPSocket).to receive(:new).with("2001:DB8::42", 5151)
+      expect(TCPSocket).to receive(:new).with("2001:db8::42", 5151)
 
       rsn = writer.__send__(:resolve_server_name)
       expect(rsn).to be_a(Array)

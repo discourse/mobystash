@@ -1,4 +1,4 @@
-ruby '> 2.3', '< 2.7'
+ruby '> 2.7', '< 2.8'
 
 source 'https://rubygems.org'
 
