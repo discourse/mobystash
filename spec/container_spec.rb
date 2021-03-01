@@ -104,12 +104,19 @@ describe Mobystash::Container do
           .to receive(:send_event)
           .with(
             message: "xyzzy",
-            moby: {
-              name: "basic_container",
+            container: {
               id: "asdfasdfbasic",
+              image: {
+                name: "rspec/basic_container:latest",
+                id: "poiuytrewqbasic",
+              },
+              name: "basic_container",
               hostname: "basic-container",
-              image: "rspec/basic_container:latest",
-              image_id: "poiuytrewqbasic",
+            },
+            ecs: {
+              version: '1.8',
+            },
+            labels: {
               stream: "stdout",
             },
             "@timestamp": "2018-10-02T08:39:16.458228203Z",
@@ -171,12 +178,19 @@ describe Mobystash::Container do
           .to receive(:send_event)
           .with(
             message: "<150>Oct 11 10:10:35 sumhost ohai[3656]: hello from syslog!",
-            moby: {
-              name: "basic_container",
+            container: {
               id: "asdfasdfbasic",
+              image: {
+                name: "rspec/basic_container:latest",
+                id: "poiuytrewqbasic",
+              },
+              name: "basic_container",
               hostname: "basic-container",
-              image: "rspec/basic_container:latest",
-              image_id: "poiuytrewqbasic",
+            },
+            ecs: {
+              version: '1.8',
+            },
+            labels: {
               stream: "stderr",
             },
             "@timestamp": "2018-10-02T08:39:16.458228203Z",
@@ -243,12 +257,19 @@ describe Mobystash::Container do
           .to receive(:send_event)
           .with(
             message: "A",
-            moby: {
-              name: "filtered_container",
+            container: {
               id: "asdfasdffiltered",
+              image: {
+                name: "rspec/filtered_container:latest",
+                id: "poiuytrewqfiltered",
+              },
+              name: "filtered_container",
               hostname: "filtered-container",
-              image: "rspec/filtered_container:latest",
-              image_id: "poiuytrewqfiltered",
+            },
+            ecs: {
+              version: '1.8',
+            },
+            labels: {
               stream: "stdout",
             },
             "@timestamp": "2018-10-02T08:39:16.458228203Z",
@@ -331,12 +352,19 @@ describe Mobystash::Container do
             nested: {
               tags: "work",
             },
-            moby: {
-              name: "tagged_container",
+            container: {
               id: "asdfasdftagged",
+              image: {
+                name: "rspec/tagged_container:latest",
+                id: "poiuytrewqtagged",
+              },
+              name: "tagged_container",
               hostname: "tagged-container",
-              image: "rspec/tagged_container:latest",
-              image_id: "poiuytrewqtagged",
+            },
+            ecs: {
+              version: '1.8',
+            },
+            labels: {
               stream: "stdout",
             },
             "@timestamp": "2018-10-02T08:39:16.458228203Z",
@@ -406,12 +434,19 @@ describe Mobystash::Container do
           .to receive(:send_event)
           .with(
             message: "A",
-            moby: {
-              name: "syslog_container",
+            container: {
               id: "asdfasdfsyslog",
+              image: {
+                name: "rspec/syslog_container:latest",
+                id: "poiuytrewqsyslog",
+              },
+              name: "syslog_container",
               hostname: "syslog-container",
-              image: "rspec/syslog_container:latest",
-              image_id: "poiuytrewqsyslog",
+            },
+            ecs: {
+              version: '1.8',
+            },
+            labels: {
               stream: "stderr",
             },
             "@timestamp": "2018-10-02T08:39:16.458228203Z",
@@ -448,12 +483,19 @@ describe Mobystash::Container do
           .to receive(:send_event)
           .with(
             message: "hello from syslog!",
-            moby: {
-              name: "syslog_container",
+            container: {
               id: "asdfasdfsyslog",
+              image: {
+                name: "rspec/syslog_container:latest",
+                id: "poiuytrewqsyslog",
+              },
+              name: "syslog_container",
               hostname: "syslog-container",
-              image: "rspec/syslog_container:latest",
-              image_id: "poiuytrewqsyslog",
+            },
+            ecs: {
+              version: '1.8',
+            },
+            labels: {
               stream: "stderr",
             },
             syslog: {
@@ -500,12 +542,19 @@ describe Mobystash::Container do
           .to receive(:send_event)
           .with(
             message: "hello from syslog!",
-            moby: {
-              name: "syslog_container",
+            container: {
               id: "asdfasdfsyslog",
+              image: {
+                name: "rspec/syslog_container:latest",
+                id: "poiuytrewqsyslog",
+              },
+              name: "syslog_container",
               hostname: "syslog-container",
-              image: "rspec/syslog_container:latest",
-              image_id: "poiuytrewqsyslog",
+            },
+            ecs: {
+              version: '1.8',
+            },
+            labels: {
               stream: "stderr",
             },
             syslog: {
@@ -550,12 +599,19 @@ describe Mobystash::Container do
           .to receive(:send_event)
           .with(
             message: "hello from syslog!",
-            moby: {
-              name: "syslog_container",
+            container: {
               id: "asdfasdfsyslog",
+              image: {
+                name: "rspec/syslog_container:latest",
+                id: "poiuytrewqsyslog",
+              },
+              name: "syslog_container",
               hostname: "syslog-container",
-              image: "rspec/syslog_container:latest",
-              image_id: "poiuytrewqsyslog",
+            },
+            ecs: {
+              version: '1.8',
+            },
+            labels: {
               stream: "stderr",
             },
             syslog: {
@@ -600,12 +656,19 @@ describe Mobystash::Container do
           .to receive(:send_event)
           .with(
             message: "hellofromsyslog!",
-            moby: {
-              name: "syslog_container",
+            container: {
               id: "asdfasdfsyslog",
+              image: {
+                name: "rspec/syslog_container:latest",
+                id: "poiuytrewqsyslog",
+              },
+              name: "syslog_container",
               hostname: "syslog-container",
-              image: "rspec/syslog_container:latest",
-              image_id: "poiuytrewqsyslog",
+            },
+            ecs: {
+              version: '1.8',
+            },
+            labels: {
               stream: "stderr",
             },
             syslog: {

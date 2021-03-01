@@ -1,6 +1,6 @@
-FROM ruby:2.6-slim-buster
+FROM ruby:2.7-slim-buster
 
-MAINTAINER Matt Palmer "matt.palmer@discourse.org"
+MAINTAINER Michael Brown "michael.brown@discourse.org"
 
 RUN useradd mobystash -s /bin/bash -m -U --create-home
 
