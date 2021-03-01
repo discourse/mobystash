@@ -60,12 +60,17 @@ module Mobystash
       @parse_syslog = false
 
       @tags = {
-        moby: {
-          name: @name,
+        ecs: {
+          version: '1.8'
+        },
+        container: {
           id: @id,
+          image: {
+            id: docker_data.info["Image"],
+            name: docker_data.info["Config"]["Image"],
+          },
           hostname: docker_data.info["Config"]["Hostname"],
-          image: docker_data.info["Config"]["Image"],
-          image_id: docker_data.info["Image"],
+          name: @name,
         }
       }
 
@@ -281,7 +286,7 @@ module Mobystash
         event = {
           message: msg,
           "@timestamp": log_time.strftime("%FT%T.%NZ"),
-          moby: {
+          labels: {
             stream: stream.to_s,
           },
         }.deep_merge(syslog_fields).deep_merge(sampling_metadata).deep_merge!(@tags)
