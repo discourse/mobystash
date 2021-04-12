@@ -2,6 +2,8 @@
 require 'deep_merge'
 require 'murmurhash3'
 
+TIMESTAMP_FORMAT = '%FT%T.%3NZ'
+
 module Mobystash
   # Hoovers up logs for a single container and passes them on to the writer.
   class Container
@@ -129,6 +131,23 @@ module Mobystash
       end
 
       super
+    end
+
+    def parse_timestamp(t) # copied from syslogstash
+      return Time.now.utc if t.nil?
+
+      begin
+        if t.start_with? '*'
+          # unsynced timestamp from IOS, is useless
+          Time.now.utc
+        else
+          # DateTime does a fairly sensible job of this
+          DateTime.parse(t)
+        end
+      rescue
+        # as good a fallback as any
+        Time.now.utc
+      end
     end
 
     private
@@ -285,11 +304,16 @@ module Mobystash
       if !@filter_regex || !msg.match?(@filter_regex)
         event = {
           message: msg,
-          "@timestamp": log_time.strftime("%FT%T.%NZ"),
           labels: {
             stream: stream.to_s,
           },
         }.deep_merge(syslog_fields).deep_merge(sampling_metadata).deep_merge!(@tags)
+        if event.key? :"@timestamp"
+          event.deep_merge({ event: { created: log_time.strftime("%FT%T.%NZ") } })
+        else
+          event[:"@timestamp"] = log_time.strftime("%FT%T.%NZ")
+        end
+
 
         # Can't calculate the document_id until you've got a constructed event...
         metadata = {
@@ -332,16 +356,27 @@ module Mobystash
         severity = flags % 8
         facility = flags / 8
 
-        [message, { syslog: {
-          timestamp: timestamp,
-          severity_id: severity,
-          severity_name: SYSLOG_SEVERITIES[severity],
-          facility_id: facility,
-          facility_name: SYSLOG_FACILITIES[facility],
-          hostname: hostname,
-          program: program,
-          pid: pid.nil? ? nil : pid.to_i,
-        }.select { |k, v| !v.nil? } }]
+        log = {
+           '@timestamp': parse_timestamp(timestamp).strftime(TIMESTAMP_FORMAT),
+           log: {
+             original: msg,
+             syslog: {
+               severity: {
+                 code: severity,
+                 name: SYSLOG_SEVERITIES[severity],
+               },
+               facility: {
+                 code: facility,
+                 name: SYSLOG_FACILITIES[facility],
+               },
+             },
+           }
+        }
+        log.deep_merge({ host: { hostname: hostname } }) unless hostname.nil?
+        log.deep_merge({ process: { name: program } }) unless program.nil?
+        log.deep_merge({ process: { pid: pid.to_i } }) unless pid.nil?
+
+        [message, log]
       else
         [msg, {}]
       end

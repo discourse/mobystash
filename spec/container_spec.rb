@@ -495,26 +495,38 @@ describe Mobystash::Container do
             ecs: {
               version: '1.8',
             },
+            event: {
+              created: "2018-10-02T08:39:16.458228203Z"
+            },
+            host: {
+              hostname: "sumhost",
+            },
             labels: {
               stream: "stderr",
             },
-            syslog: {
-              severity_id: 6,
-              severity_name: "info",
-              facility_id: 18,
-              facility_name: "local2",
-              hostname: "sumhost",
-              timestamp: "Oct 11 10:10:35",
-              program: "ohai",
+            log: {
+              original: "<150>Oct 11 10:10:35 sumhost ohai[3656]: hello from syslog!",
+              syslog: {
+                facility: {
+                  code: 18,
+                  name: "local2",
+                },
+                severity: {
+                  code: 6,
+                  name: "info",
+                },
+              },
+            },
+            process: {
+              name: 'ohai',
               pid: 3656,
             },
-            "@timestamp": "2018-10-02T08:39:16.458228203Z",
+            "@timestamp": "2021-10-11T10:10:35.000Z",
             "@metadata": {
               document_id: match(DOC_ID_REGEX),
               event_type: "moby",
             },
           )
-
         container.run
       end
 
@@ -554,18 +566,29 @@ describe Mobystash::Container do
             ecs: {
               version: '1.8',
             },
+            event: {
+              created: "2018-10-02T08:39:16.458228203Z"
+            },
+            host: {
+              hostname: "sumhost",
+            },
             labels: {
               stream: "stderr",
             },
-            syslog: {
-              severity_id: 6,
-              severity_name: "info",
-              facility_id: 18,
-              facility_name: "local2",
-              hostname: "sumhost",
-              timestamp: "Oct 11 10:10:35",
+            log: {
+              original: "<150>Oct 11 10:10:35 sumhost hello from syslog!",
+              syslog: {
+                facility: {
+                  code: 18,
+                  name: "local2",
+                },
+                severity: {
+                  code: 6,
+                  name: "info",
+                },
+              },
             },
-            "@timestamp": "2018-10-02T08:39:16.458228203Z",
+            "@timestamp": "2021-10-11T10:10:35.000Z",
             "@metadata": {
               document_id: match(DOC_ID_REGEX),
               event_type: "moby",
@@ -611,18 +634,29 @@ describe Mobystash::Container do
             ecs: {
               version: '1.8',
             },
+            event: {
+              created: "2018-10-02T08:39:16.458228203Z"
+            },
             labels: {
               stream: "stderr",
             },
-            syslog: {
-              severity_id: 6,
-              severity_name: "info",
-              facility_id: 18,
-              facility_name: "local2",
-              timestamp: "Oct 11 10:10:35",
-              program: "ohai",
+            process: {
+              name: 'ohai',
             },
-            "@timestamp": "2018-10-02T08:39:16.458228203Z",
+            log: {
+              original: "<150>Oct 11 10:10:35 ohai: hello from syslog!",
+              syslog: {
+                facility: {
+                  code: 18,
+                  name: "local2",
+                },
+                severity: {
+                  code: 6,
+                  name: "info",
+                },
+              },
+            },
+            "@timestamp": "2021-10-11T10:10:35.000Z",
             "@metadata": {
               document_id: match(DOC_ID_REGEX),
               event_type: "moby",
@@ -668,17 +702,26 @@ describe Mobystash::Container do
             ecs: {
               version: '1.8',
             },
+            event: {
+              created: "2018-10-02T08:39:16.458228203Z"
+            },
             labels: {
               stream: "stderr",
             },
-            syslog: {
-              severity_id: 6,
-              severity_name: "info",
-              facility_id: 18,
-              facility_name: "local2",
-              timestamp: "Oct 11 10:10:35",
+            log: {
+              original: "<150>Oct 11 10:10:35 hellofromsyslog!",
+              syslog: {
+                facility: {
+                  code: 18,
+                  name: "local2",
+                },
+                severity: {
+                  code: 6,
+                  name: "info",
+                },
+              },
             },
-            "@timestamp": "2018-10-02T08:39:16.458228203Z",
+            "@timestamp": "2021-10-11T10:10:35.000Z",
             "@metadata": {
               document_id: match(DOC_ID_REGEX),
               event_type: "moby",
