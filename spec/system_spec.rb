@@ -35,7 +35,6 @@ describe Mobystash::System do
   let(:mock_queue)   { instance_double(Queue) }
   let(:mock_watcher) { instance_double(Mobystash::MobyWatcher) }
   let(:mock_writer)  { instance_double(LogstashWriter) }
-  # let(:mock_metrics_registry)  { instance_double(Prometheus::Client::Registry) }
 
   before(:each) do
     allow(Mobystash::MobyWatcher).to receive(:new).with(queue: mock_queue, config: instance_of(Mobystash::Config)).and_return(mock_watcher)
