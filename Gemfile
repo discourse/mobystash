@@ -13,6 +13,7 @@ gem 'rbtrace', '~> 0.4'
 gem 'sigdump', require: 'sigdump/setup'
 gem 'stackprof'
 gem 'prometheus_exporter'
+gem 'loggerstash'
 
 group :development do
   gem 'byebug'
