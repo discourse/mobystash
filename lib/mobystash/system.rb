@@ -34,7 +34,7 @@ module Mobystash
       @logger.info(progname) { "Starting Mobystash::System" }
 
       @watcher.run!
-      @config.logstash_writer.run
+      @config.logstash_writer.start!
 
       if @config.enable_metrics
 

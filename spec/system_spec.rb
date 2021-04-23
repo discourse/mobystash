@@ -45,13 +45,14 @@ describe Mobystash::System do
       metrics_registry: instance_of(Prometheus::Client::Registry),
       backlog: 1_000_000
     ).and_return(mock_writer)
-    allow(mock_writer).to receive(:run)
+    allow(mock_writer).to receive(:start!)
 
     allow(Queue).to receive(:new).and_return(mock_queue)
     allow(mock_queue).to receive(:pop).and_return([:terminate])
     allow(mock_watcher).to receive(:run!)
     allow(mock_queue).to receive(:push)
     allow(mock_watcher).to receive(:shutdown!)
+    allow(mock_writer).to receive(:start!)
     allow(mock_writer).to receive(:stop!)
     allow(system).to receive(:write_state_file)
   end
@@ -103,7 +104,7 @@ describe Mobystash::System do
         system.run
 
         expect(LogstashWriter).to have_received(:new)
-        expect(mock_writer).to have_received(:run)
+        expect(mock_writer).to have_received(:start!)
       end
 
       it "creates and starts existing logging for existing containers" do
