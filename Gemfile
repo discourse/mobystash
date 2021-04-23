@@ -14,6 +14,7 @@ gem 'sigdump', require: 'sigdump/setup'
 gem 'stackprof'
 gem 'prometheus_exporter'
 gem 'loggerstash'
+gem 'logstash_writer'
 
 group :development do
   gem 'byebug'

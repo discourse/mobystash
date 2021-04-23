@@ -8,6 +8,7 @@ module Mobystash
     class InvalidEnvironmentError < StandardError; end
 
     attr_reader :logstash_writer,
+                :logstash_metrics_registry,
                 :enable_metrics,
                 :sample_ratio,
                 :sample_keys,
@@ -111,11 +112,13 @@ module Mobystash
     private
 
     def parse_env(env)
+      @logstash_metrics_registry = Prometheus::Client::Registry.new
       @logstash_writer = LogstashWriter.new(
         server_name: pluck_string(env, "LOGSTASH_SERVER"),
         logger: @logger,
         # We're shipping a lot of container logs, it seems reasonable to have
         # a larger-than-default buffer in case of accidents.
+        metrics_registry: @logstash_metrics_registry,
         backlog: 1_000_000,
       )
 

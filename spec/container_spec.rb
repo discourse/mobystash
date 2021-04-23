@@ -23,7 +23,12 @@ describe Mobystash::Container do
   let(:mock_moby_container) { instance_double(Docker::Container) }
 
   before :each do
-    allow(LogstashWriter).to receive(:new).with(server_name: "speccy", logger: logger, backlog: 1_000_000).and_return(mock_writer)
+    allow(LogstashWriter).to receive(:new).with(
+      server_name: "speccy",
+      logger: logger,
+      metrics_registry: instance_of(Prometheus::Client::Registry),
+      backlog: 1_000_000
+    ).and_return(mock_writer)
     allow(Docker::Connection).to receive(:new).with("unix:///", {}).and_call_original
   end
 

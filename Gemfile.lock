@@ -127,6 +127,7 @@ DEPENDENCIES
   guard-rspec
   guard-rubocop
   loggerstash
+  logstash_writer
   mobystash!
   murmurhash3 (~> 0.1)
   prometheus_exporter

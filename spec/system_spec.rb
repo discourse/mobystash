@@ -35,10 +35,16 @@ describe Mobystash::System do
   let(:mock_queue)   { instance_double(Queue) }
   let(:mock_watcher) { instance_double(Mobystash::MobyWatcher) }
   let(:mock_writer)  { instance_double(LogstashWriter) }
+  # let(:mock_metrics_registry)  { instance_double(Prometheus::Client::Registry) }
 
   before(:each) do
     allow(Mobystash::MobyWatcher).to receive(:new).with(queue: mock_queue, config: instance_of(Mobystash::Config)).and_return(mock_watcher)
-    allow(LogstashWriter).to receive(:new).with(server_name: "speccy", logger: logger, backlog: 1_000_000).and_return(mock_writer)
+    allow(LogstashWriter).to receive(:new).with(
+      server_name: "speccy",
+      logger: logger,
+      metrics_registry: instance_of(Prometheus::Client::Registry),
+      backlog: 1_000_000
+    ).and_return(mock_writer)
     allow(mock_writer).to receive(:run)
 
     allow(Queue).to receive(:new).and_return(mock_queue)
@@ -46,8 +52,8 @@ describe Mobystash::System do
     allow(mock_watcher).to receive(:run!)
     allow(mock_queue).to receive(:push)
     allow(mock_watcher).to receive(:shutdown!)
-    allow(mock_writer).to receive(:stop)
-    allow(mock_writer).to receive(:metrics).and_return({})
+    allow(mock_writer).to receive(:stop!)
+    # allow(mock_writer).to receive(:metrics).and_return({})
     allow(system).to receive(:write_state_file)
   end
 
@@ -235,7 +241,7 @@ describe Mobystash::System do
         end
 
         it "tells the writer to shutdown" do
-          expect(mock_writer).to receive(:stop)
+          expect(mock_writer).to receive(:stop!)
 
           system.run
         end

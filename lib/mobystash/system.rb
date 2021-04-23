@@ -57,7 +57,7 @@ module Mobystash
           @metrics_server.collector.register_metric(metric)
         end
 
-        @config.logstash_writer.metrics.values.each do |metric|
+        @config.logstash_metrics_registry.metrics.each do |metric|
           @metrics_server.collector.register_metric(metric)
         end
 
@@ -100,7 +100,7 @@ module Mobystash
           @watcher.shutdown!
           @containers.values.each { |c| c.shutdown! }
           write_state_file
-          @config.logstash_writer.stop
+          @config.logstash_writer.stop!
 
           if @metrics_server
             PrometheusExporter::Instrumentation::Process.stop
