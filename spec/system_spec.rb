@@ -53,7 +53,6 @@ describe Mobystash::System do
     allow(mock_queue).to receive(:push)
     allow(mock_watcher).to receive(:shutdown!)
     allow(mock_writer).to receive(:stop!)
-    # allow(mock_writer).to receive(:metrics).and_return({})
     allow(system).to receive(:write_state_file)
   end
 
