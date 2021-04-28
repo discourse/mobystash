@@ -18,6 +18,9 @@ GEM
     excon (0.76.0)
     ffi (1.13.1)
     formatador (0.2.5)
+    frankenstein (2.1.0)
+      prometheus-client (~> 2.0)
+      rack (~> 2.0)
     guard (2.16.2)
       formatador (>= 0.2.4)
       listen (>= 2.7, < 4.0)
@@ -63,6 +66,7 @@ GEM
     pry-byebug (3.9.0)
       byebug (~> 11.0)
       pry (~> 0.13.0)
+    rack (2.2.3)
     rainbow (3.0.0)
     rake (13.0.1)
     rb-fsevent (0.10.4)
@@ -105,6 +109,13 @@ GEM
     rubocop-rspec (1.42.0)
       rubocop (>= 0.87.0)
     ruby-progressbar (1.10.1)
+    service_skeleton (2.0.2)
+      frankenstein (~> 2.0)
+      loggerstash (~> 1)
+      prometheus-client (~> 2.0)
+      sigdump (~> 0.2)
+      to_regexp (~> 0.2)
+      webrick
     shellany (0.0.1)
     sigdump (0.2.4)
     simplecov (0.18.5)
@@ -113,7 +124,9 @@ GEM
     simplecov-html (0.12.2)
     stackprof (0.2.15)
     thor (1.0.1)
+    to_regexp (0.2.1)
     unicode-display_width (1.7.0)
+    webrick (1.7.0)
     yard (0.9.25)
 
 PLATFORMS
@@ -139,6 +152,7 @@ DEPENDENCIES
   rubocop
   rubocop-discourse
   rubocop-rspec
+  service_skeleton (~> 2)
   sigdump
   simplecov
   stackprof

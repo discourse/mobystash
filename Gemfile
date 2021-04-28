@@ -15,6 +15,7 @@ gem 'stackprof'
 gem 'prometheus_exporter'
 gem 'loggerstash'
 gem 'logstash_writer'
+gem 'service_skeleton', '~> 2'
 
 group :development do
   gem 'byebug'
