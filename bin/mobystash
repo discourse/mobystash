@@ -1,7 +1,5 @@
 #!/usr/bin/env ruby
 
-Thread.current.name = "main"
-
 if ENV['RUBY_TRACE_ALLOCATIONS'] == "yep"
   require 'objspace'
 

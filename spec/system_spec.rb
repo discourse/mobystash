@@ -5,71 +5,6 @@ require 'prometheus_exporter/server'
 
 require 'mobystash'
 
-class MockConfig
-  attr_accessor :drop_regex
-  attr_reader :logger, :writer
-
-  def initialize(logger, writer)
-    @logger = logger
-    @writer = writer
-  end
-
-  def syslog_socket
-    '/somewhere/funny'
-  end
-
-  def relay_to_stdout
-    false
-  end
-
-  def relay_sockets
-    []
-  end
-
-  def enable_metrics
-    true
-  end
-
-  def metrics
-    []
-  end
-
-  def docker_host
-    "unix:///var/run/test.sock"
-  end
-
-  def state_file
-    "./mobystash_state.dump"
-  end
-
-  def state_checkpoint_interval
-    1
-  end
-
-  def add_fields
-    @add_fields ||= {}
-  end
-end
-
-class MockMetrics
-  def dropped_total
-    @dropped_total ||=
-      Prometheus::Client::Counter.new(
-        :dropped_total,
-        docstring: 'Number of log entries that were not forwarded due to matching the drop regex',
-      )
-  end
-
-  def messages_received_total
-    @messages_received_total ||=
-      Prometheus::Client::Counter.new(
-        :messages_received_total,
-        docstring: 'The number of syslog message received from the log socket',
-        labels: [:socket_path],
-      )
-  end
-end
-
 describe Mobystash::System do
   uses_logger
 
@@ -85,7 +20,8 @@ describe Mobystash::System do
   let(:mock_config) { MockConfig.new(logger, mock_writer) }
   let(:mock_queue)   { instance_double(Queue) }
   let(:mock_watcher) { instance_double(Mobystash::MobyWatcher) }
-  let(:system) { Mobystash::System.new(mock_config, logger: logger, metrics: mock_metrics, writer: mock_writer) }
+  let(:sampler) { Mobystash::Sampler.new(mock_config, mock_metrics) }
+  let(:system) { Mobystash::System.new(mock_config, logger: logger, metrics: mock_metrics, writer: mock_writer, sampler: sampler) }
 
   describe "#config" do
     it "returns the config" do
@@ -94,7 +30,7 @@ describe Mobystash::System do
   end
 
   before(:each) do
-    allow(Mobystash::MobyWatcher).to receive(:new).with(queue: mock_queue, config: mock_config).and_return(mock_watcher)
+    allow(Mobystash::MobyWatcher).to receive(:new).with(queue: mock_queue, config: mock_config, metrics: mock_metrics).and_return(mock_watcher)
     allow(LogstashWriter).to receive(:new).with(
       server_name: "speccy",
       logger: logger,
@@ -105,8 +41,8 @@ describe Mobystash::System do
 
     allow(Queue).to receive(:new).and_return(mock_queue)
     allow(mock_queue).to receive(:pop).and_return([:terminate])
-    allow(mock_watcher).to receive(:run!)
     allow(mock_queue).to receive(:push)
+    allow(mock_watcher).to receive(:run!)
     allow(mock_watcher).to receive(:shutdown!)
     allow(mock_writer).to receive(:start!)
     allow(mock_writer).to receive(:stop!)
@@ -152,7 +88,7 @@ describe Mobystash::System do
       it "fires up a docker watcher" do
         system.start!
 
-        expect(Mobystash::MobyWatcher).to have_received(:new).with(queue: mock_queue, config: mock_config)
+        expect(Mobystash::MobyWatcher).to have_received(:new).with(queue: mock_queue, config: mock_config, metrics: mock_metrics)
         expect(mock_watcher).to have_received(:run!)
       end
 
@@ -204,7 +140,7 @@ describe Mobystash::System do
         allow(Docker::Connection).to receive(:new).with("unix:///var/run/test.sock", {}).and_return(mock_conn)
 
         allow(Docker::Container).to receive(:get).with("asdfasdfbasic", {}, mock_conn).and_return(docker_data)
-        allow(Mobystash::Container).to receive(:new).with(docker_data, system.config, last_log_time: nil).and_return(mobystash_container)
+        allow(Mobystash::Container).to receive(:new).with(docker_data, system.config, last_log_time: nil, sampler: sampler, metrics: mock_metrics).and_return(mobystash_container)
         allow(mobystash_container).to receive(:shutdown!)
         allow(mobystash_container).to receive(:last_log_timestamp).and_return("xyzzy")
       end
@@ -213,7 +149,7 @@ describe Mobystash::System do
         it "tells the container to go publish itself" do
           expect(mock_queue).to receive(:pop).and_return([:created, "asdfasdfbasic"])
           expect(Docker::Container).to receive(:get).with("asdfasdfbasic", {}, mock_conn).and_return(docker_data)
-          expect(Mobystash::Container).to receive(:new).with(docker_data, system.config, last_log_time: nil).and_return(mobystash_container)
+          expect(Mobystash::Container).to receive(:new).with(docker_data, system.config, last_log_time: nil, sampler: sampler, metrics: mock_metrics).and_return(mobystash_container)
           expect(mobystash_container).to receive(:run!)
 
           system.start!

@@ -1,56 +1,50 @@
 require_relative './spec_helper'
 
-require 'mobystash/config'
 require 'mobystash/sampler'
 
 describe Mobystash::Sampler do
   uses_logger
 
-  let(:sampler) { Mobystash::Sampler.new(mock_config) }
 
-  let(:mock_config)     { instance_double(Mobystash::Config) }
+  let(:mock_metrics)    { MockMetrics.new }
+  let(:mock_writer)     { instance_double(LogstashWriter) }
+  let(:mock_config)     { MockConfig.new(logger, mock_writer) }
   let(:sample_ratio)    { 10 }
   let(:sample_keys)     { [] }
-  let(:unsampled)       { instance_double(PrometheusExporter::Metric::Counter, "unsampled") }
-  let(:samples_sent)    { instance_double(PrometheusExporter::Metric::Counter, "samples_sent") }
-  let(:samples_dropped) { instance_double(PrometheusExporter::Metric::Counter, "samples_dropped") }
-  let(:sample_ratios)   { instance_double(PrometheusExporter::Metric::Gauge, "sample_ratios") }
+  let(:unsampled)       { instance_double(Prometheus::Client::Counter, "unsampled_totl") }
+  let(:samples_sent)    { instance_double(Prometheus::Client::Counter, "samples_sent") }
+  let(:samples_dropped) { instance_double(Prometheus::Client::Counter, "samples_dropped") }
+  let(:sample_ratios)   { instance_double(Prometheus::Client::Histogram, "sample_ratios") }
   let(:sent_values)     { {} }
   let(:dropped_values)  { {} }
   let(:ratio_values)    { {} }
 
+  let(:sampler) { Mobystash::Sampler.new(mock_config, mock_metrics) }
+
   before(:each) do
     allow(mock_config).to receive(:sample_ratio).and_return(sample_ratio)
     allow(mock_config).to receive(:sample_keys).and_return(sample_keys)
-    allow(mock_config).to receive(:unsampled_entries).and_return(unsampled)
-    allow(mock_config).to receive(:sampled_entries_sent).and_return(samples_sent)
-    allow(mock_config).to receive(:sampled_entries_dropped).and_return(samples_dropped)
-    allow(mock_config).to receive(:sample_ratios).and_return(sample_ratios)
+    allow(mock_metrics).to receive(:unsampled_entries_total).and_return(unsampled)
+    allow(mock_metrics).to receive(:sampled_entries_sent_total).and_return(samples_sent)
+    allow(mock_metrics).to receive(:sampled_entries_dropped_total).and_return(samples_dropped)
+    allow(mock_metrics).to receive(:sample_ratios).and_return(sample_ratios)
 
     allow(unsampled).to receive(:increment)
     allow(samples_sent).to receive(:increment)
     allow(samples_dropped).to receive(:increment)
 
-    allow(samples_sent).to receive(:data).and_return(Hash[sent_values.map { |k, v| [{ sample_key: k }, v] }])
-    allow(samples_dropped).to receive(:data).and_return(Hash[dropped_values.map { |k, v| [{ sample_key: k }, v] }])
-    allow(sample_ratios).to receive(:data).and_return(Hash[ratio_values.map { |k, v| [{ sample_key: k }, v] }])
+    # allow(samples_sent).to receive(:data).and_return(Hash[sent_values.map { |k, v| [{ sample_key: k }, v] }])
+    # allow(samples_dropped).to receive(:data).and_return(Hash[dropped_values.map { |k, v| [{ sample_key: k }, v] }])
+    # allow(sample_ratios).to receive(:data).and_return(Hash[ratio_values.map { |k, v| [{ sample_key: k }, v] }])
   end
 
   describe "#calculate_key_ratios" do
-    context "with no samples counted" do
-      it "doesn't set any ratios" do
-        expect(sample_ratios).to_not receive(:set)
-
-        sampler.__send__(:calculate_ratios)
-      end
-    end
-
     context "with entries on a single key" do
       let(:sent_values)    { { "foo" => 5  } }
       let(:dropped_values) { { "foo" => 45 } }
 
       it "gives a sample ratio equal to the overall ratio" do
-        expect(sample_ratios).to receive(:observe).with(within(0.001).of(10), sample_key: "foo")
+        expect(sample_ratios).to receive(:observe).with(within(0.001).of(10), labels: { sample_key: "foo" })
 
         sampler.__send__(:calculate_ratios)
       end

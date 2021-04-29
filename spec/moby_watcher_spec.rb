@@ -18,10 +18,11 @@ describe Mobystash::MobyWatcher do
       "DOCKER_HOST" => "unix:///var/run/test.sock"
     }
   end
-  let(:config) { Mobystash::Config.new(env, logger: logger) }
-
+  let(:mock_metrics) { MockMetrics.new }
+  let(:mock_writer)  { instance_double(LogstashWriter) }
+  let(:mock_config) { MockConfig.new(logger, mock_writer) }
   let(:queue)   { Queue.new }
-  let(:watcher) { Mobystash::MobyWatcher.new(queue: queue, config: config) }
+  let(:watcher) { Mobystash::MobyWatcher.new(queue: queue, config: mock_config, metrics: mock_metrics) }
 
   describe ".new" do
     it "takes a queue and a docker socket URL" do

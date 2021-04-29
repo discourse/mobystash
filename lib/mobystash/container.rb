@@ -48,13 +48,14 @@ class Mobystash::Container
   # docker_data is the Docker::Container instance representing the moby
   # container metadata, and system_config is the Mobystash::Config.
   #
-  def initialize(docker_data, system_config, last_log_time:)
+  def initialize(docker_data, system_config, last_log_time:, sampler:, metrics:)
     @id = docker_data.id
 
     @config  = system_config
     @logger  = @config.logger
-    @writer  = @config.logstash_writer
-    @sampler = @config.sampler
+    @writer  = @config.writer
+    @sampler = sampler
+    @metrics = metrics
 
     @name = (docker_data.info["Name"] || docker_data.info["Names"].first).sub(/\A\//, '')
 
@@ -85,10 +86,10 @@ class Mobystash::Container
 
     if @capture_logs
       if docker_data.info["Config"]["Tty"]
-        @config.log_entries_read_counter.increment({ container_name: @name, container_id: @id, stream: "tty" }, 0)
+        @metrics.log_entries_read_total.increment(labels: { container_name: @name, container_id: @id, stream: "tty" }, by: 0)
       else
-        @config.log_entries_read_counter.increment({ container_name: @name, container_id: @id, stream: "stdout" }, 0)
-        @config.log_entries_read_counter.increment({ container_name: @name, container_id: @id, stream: "stderr" }, 0)
+        @metrics.log_entries_read_total.increment(labels: { container_name: @name, container_id: @id, stream: "stdout" }, by: 0)
+        @metrics.log_entries_read_total.increment(labels: { container_name: @name, container_id: @id, stream: "stderr" }, by: 0)
       end
     end
 
@@ -112,21 +113,21 @@ class Mobystash::Container
   end
 
   def shutdown!
-    @config.log_entries_read_counter.remove({ container_name: @name, container_id: @id, stream: "tty" })
-    @config.log_entries_read_counter.remove({ container_name: @name, container_id: @id, stream: "stdout" })
-    @config.log_entries_read_counter.remove({ container_name: @name, container_id: @id, stream: "stderr" })
-    @config.log_entries_sent_counter.remove({ container_name: @name, container_id: @id, stream: "tty" })
+    @metrics.log_entries_read_total.remove(labels: { container_name: @name, container_id: @id, stream: "tty" })
+    @metrics.log_entries_read_total.remove(labels: { container_name: @name, container_id: @id, stream: "stdout" })
+    @metrics.log_entries_read_total.remove(labels: { container_name: @name, container_id: @id, stream: "stderr" })
+    @metrics.log_entries_sent_total.remove(labels: { container_name: @name, container_id: @id, stream: "tty" })
 
-    @config.log_entries_sent_counter.remove({ container_name: @name, container_id: @id, stream: "stdout" })
-    @config.log_entries_sent_counter.remove({ container_name: @name, container_id: @id, stream: "stderr" })
+    @metrics.log_entries_sent_total.remove(labels: { container_name: @name, container_id: @id, stream: "stdout" })
+    @metrics.log_entries_sent_total.remove(labels: { container_name: @name, container_id: @id, stream: "stderr" })
 
-    @config.last_log_entry_at.remove({ container_name: @name, container_id: @id, stream: "stderr" })
-    @config.last_log_entry_at.remove({ container_name: @name, container_id: @id, stream: "stdout" })
-    @config.last_log_entry_at.remove({ container_name: @name, container_id: @id, stream: "tty" })
+    @metrics.last_log_entry_at.remove(labels: { container_name: @name, container_id: @id, stream: "stderr" })
+    @metrics.last_log_entry_at.remove(labels: { container_name: @name, container_id: @id, stream: "stdout" })
+    @metrics.last_log_entry_at.remove(labels: { container_name: @name, container_id: @id, stream: "tty" })
 
-    @config.read_event_exception_counter.to_h.each do |label, _|
+    @metrics.read_event_exceptions_total.to_h.each do |label, _|
       if (label[:container_id] == @id)
-        @config.read_event_exception_counter.remove(label)
+        @metrics.read_event_exceptions_total.remove(label)
       end
     end
 
@@ -165,7 +166,7 @@ class Mobystash::Container
   end
 
   def event_exception(ex)
-    @config.read_event_exception_counter.increment(container_name: @name, container_id: @id, class: ex.class.to_s)
+    @metrics.read_event_exceptions_total.increment(labels: { container_name: @name, container_id: @id, class: ex.class.to_s })
   end
 
   def short_id
@@ -213,10 +214,10 @@ class Mobystash::Container
   def process_events(conn)
     begin
       if tty?(conn)
-        @config.log_entries_sent_counter.increment({ container_name: @name, container_id: @id, stream: "tty" }, 0)
+        @metrics.log_entries_sent_total.increment(labels: { container_name: @name, container_id: @id, stream: "tty" }, by: 0)
       else
-        @config.log_entries_sent_counter.increment({ container_name: @name, container_id: @id, stream: "stdout" }, 0)
-        @config.log_entries_sent_counter.increment({ container_name: @name, container_id: @id, stream: "stderr" }, 0)
+        @metrics.log_entries_sent_total.increment(labels: { container_name: @name, container_id: @id, stream: "stdout" }, by: 0)
+        @metrics.log_entries_sent_total.increment(labels: { container_name: @name, container_id: @id, stream: "stderr" }, by: 0)
       end
 
       if @capture_logs
@@ -276,7 +277,7 @@ class Mobystash::Container
   end
 
   def send_event(msg, stream)
-    @config.log_entries_read_counter.increment(container_name: @name, container_id: @id, stream: stream.to_s)
+    @metrics.log_entries_read_total.increment(labels: { container_name: @name, container_id: @id, stream: stream.to_s })
 
     log_timestamp, msg = msg.chomp.split(' ', 2)
     log_time = Time.strptime(log_timestamp, "%FT%T.%N%Z")
@@ -285,9 +286,9 @@ class Mobystash::Container
       @last_log_time = log_time
     end
 
-    @config.last_log_entry_at.observe(
+    @metrics.last_log_entry_at.observe(
       log_time.to_f,
-      container_name: @name, container_id: @id, stream: stream.to_s
+      labels: { container_name: @name, container_id: @id, stream: stream.to_s }
     )
 
     msg, syslog_fields = if @parse_syslog
@@ -325,8 +326,8 @@ class Mobystash::Container
 
       event = event.deep_merge(metadata)
 
-      @config.logstash_writer.send_event(event)
-      @config.log_entries_sent_counter.increment(container_name: @name, container_id: @id, stream: stream.to_s)
+      @writer.send_event(event)
+      @metrics.log_entries_sent_total.increment(labels: { container_name: @name, container_id: @id, stream: stream.to_s })
     end
   end
 

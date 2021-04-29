@@ -18,11 +18,13 @@ class Mobystash::System
   #
   # @return [System]
   #
-  def initialize(config, logger:, metrics:, writer:)
+  def initialize(config, logger:, metrics:, writer:, sampler:)
     @config     = config
     @logger     = logger
     @queue      = Queue.new
-    @watcher    = Mobystash::MobyWatcher.new(queue: @queue, config: @config)
+    @metrics    = metrics
+    @watcher    = Mobystash::MobyWatcher.new(queue: @queue, config: @config, metrics: @metrics)
+    @sampler    = sampler
     @writer     = writer
     @containers = {}
   end
@@ -61,7 +63,7 @@ class Mobystash::System
       when :created
         begin
           unless @containers[item.last]
-            @containers[item.last] = Mobystash::Container.new(Docker::Container.get(item.last, {}, docker_connection), @config, last_log_time: nil)
+            @containers[item.last] = Mobystash::Container.new(Docker::Container.get(item.last, {}, docker_connection), @config, last_log_time: nil, sampler: @sampler, metrics: @metrics)
             @containers[item.last].run!
           end
         rescue Docker::Error::NotFoundError
@@ -86,10 +88,11 @@ class Mobystash::System
         write_state_file
         @config.writer.stop!
 
-        if @metrics_server
-          PrometheusExporter::Instrumentation::Process.stop
-          @metrics_server.stop
-        end
+        # TODO: Figure that out too
+        # if @metrics_server
+          # PrometheusExporter::Instrumentation::Process.stop
+          # @metrics_server.stop
+        # end
         break
       else
         @logger.error(progname) { "SHOULDN'T HAPPEN: docker watcher sent an unrecognized message: #{item.inspect}.  This is a bug, please report it." }

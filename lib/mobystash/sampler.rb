@@ -1,18 +1,19 @@
 # frozen_string_literal: true
 
 class Mobystash::Sampler
-  def initialize(config)
+  def initialize(config, metrics)
     @config = config
+    @metrics = metrics
   end
 
   def sample(msg)
     k = matching_key(msg)
 
     if k.nil?
-      @config.unsampled_entries.increment
+      @metrics.unsampled_entries_total.increment
       [true, {}]
     else
-      key_ratio = @config.sample_ratios.data[sample_key: k]
+      key_ratio = @metrics.sample_ratios.get(labels: { sample_key: k })
       [].tap do |result|
         if key_ratio.nil?
           # A previously unseen sample key is the rarest of all
@@ -28,10 +29,10 @@ class Mobystash::Sampler
         end
 
         if result.first
-          @config.sampled_entries_sent.increment(sample_key: k)
+          @metrics.sampled_entries_sent_total.increment(labels: { sample_key: k })
           calculate_ratios
         else
-          @config.sampled_entries_dropped.increment(sample_key: k)
+          @metrics.sampled_entries_dropped_total.increment(labels: { sample_key: k })
         end
       end
     end
@@ -61,17 +62,15 @@ class Mobystash::Sampler
     nominal_out_per_key = nominal_total_out / counts.length
 
     counts.each do |key, tot|
-      @config.sample_ratios.observe([1, tot / nominal_out_per_key].max, sample_key: key)
+      @metrics.sample_ratios.observe([1, tot / nominal_out_per_key].max, labels: { sample_key: key })
     end
   end
 
   def sample_count_totals
     Hash.new(0).tap do |counts|
-      @config.sampled_entries_sent.data.each do |k, v|
-        counts[k[:sample_key]] += v
-      end
-      @config.sampled_entries_dropped.data.each do |k, v|
-        counts[k[:sample_key]] += v
+      @config.sample_keys.each do |k|
+        counts[k[:sample_key]] += @metics.sampled_entries_sent_total.get(labels: { sample_key: k })
+        counts[k[:sample_key]] += @metics.sampled_entries_dropped_total.get(labels: { sample_key: k })
       end
     end
   end
