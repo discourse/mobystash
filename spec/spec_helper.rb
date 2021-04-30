@@ -12,7 +12,7 @@ end
 
 class MockConfig
   attr_accessor :drop_regex
-  attr_reader :logger, :writer
+  attr_reader :logger, :writer, :sample_keys
 
   def initialize(logger, writer)
     @logger = logger
@@ -40,11 +40,20 @@ class MockConfig
   end
 
   def sample_ratio
-    1
+    @sample_ratio || 1
+  end
+
+  def set_sample_ratio(sample_ratio)
+    @sample_ratio = sample_ratio
   end
 
   def sample_keys
-    @sample_keys ||= {}
+    @sample_keys || []
+  end
+
+  def set_sample_keys(sample_keys)
+    # Sample keys are set by the ENV normally, but for testing lets just have an ez method
+    @sample_keys = sample_keys
   end
 
   def docker_host
@@ -118,6 +127,24 @@ class MockMetrics
       )
   end
 
+  def sampled_entries_sent_total
+    @sampled_entries_sent_total ||=
+      Prometheus::Client::Counter.new(
+        :sampled_entries_sent_total,
+        docstring: "something",
+        labels: [:sample_key]
+      )
+  end
+
+  def sampled_entries_dropped_total
+    @sampled_entries_dropped_total ||=
+      Prometheus::Client::Counter.new(
+        :sampled_entries_dropped_total,
+        docstring: "something",
+        labels: [:sample_key]
+      )
+  end
+
   def last_log_entry_at
     @last_log_entry_at ||=
       Prometheus::Client::Histogram.new(
@@ -129,7 +156,7 @@ class MockMetrics
 
   def sample_ratios
     @sample_ratios ||=
-      Prometheus::Client::Histogram.new(
+      Prometheus::Client::Gauge.new(
         :sample_ratios,
         docstring: "something",
         labels: [:sample_key]

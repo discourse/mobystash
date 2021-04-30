@@ -315,7 +315,6 @@ class Mobystash::Container
         event[:"@timestamp"] = log_time.strftime("%FT%T.%NZ")
       end
 
-
       # Can't calculate the document_id until you've got a constructed event...
       metadata = {
         "@metadata": {

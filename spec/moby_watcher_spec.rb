@@ -1,6 +1,5 @@
 require_relative './spec_helper'
 
-require 'mobystash/config'
 require 'mobystash/moby_watcher'
 
 describe Mobystash::MobyWatcher do
