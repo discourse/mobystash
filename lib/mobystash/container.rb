@@ -48,12 +48,12 @@ class Mobystash::Container
   # docker_data is the Docker::Container instance representing the moby
   # container metadata, and system_config is the Mobystash::Config.
   #
-  def initialize(docker_data, system_config, last_log_time:, sampler:, metrics:)
+  def initialize(docker_data, system_config, last_log_time:, sampler:, metrics:, writer:)
     @id = docker_data.id
 
     @config  = system_config
     @logger  = @config.logger
-    @writer  = @config.writer
+    @writer  = writer
     @sampler = sampler
     @metrics = metrics
 

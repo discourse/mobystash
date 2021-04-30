@@ -12,11 +12,10 @@ end
 
 class MockConfig
   attr_accessor :drop_regex
-  attr_reader :logger, :writer, :sample_keys
+  attr_reader :logger, :sample_keys
 
-  def initialize(logger, writer)
+  def initialize(logger)
     @logger = logger
-    @writer = writer
   end
 
   def syslog_socket

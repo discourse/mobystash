@@ -19,7 +19,7 @@ describe Mobystash::MobyWatcher do
   end
   let(:mock_metrics) { MockMetrics.new }
   let(:mock_writer)  { instance_double(LogstashWriter) }
-  let(:mock_config) { MockConfig.new(logger, mock_writer) }
+  let(:mock_config) { MockConfig.new(logger) }
   let(:queue)   { Queue.new }
   let(:watcher) { Mobystash::MobyWatcher.new(queue: queue, config: mock_config, metrics: mock_metrics) }
 

@@ -15,11 +15,11 @@ describe Mobystash::Container do
 
   let(:mock_metrics)        { MockMetrics.new }
   let(:mock_writer)         { instance_double(LogstashWriter) }
-  let(:mock_config)         { MockConfig.new(logger, mock_writer) }
+  let(:mock_config)         { MockConfig.new(logger) }
   let(:sampler)             { Mobystash::Sampler.new(mock_config, mock_metrics) }
   let(:docker_data)         { container_fixture(container_name) }
   let(:last_log_time)       { nil }
-  let(:container)           { Mobystash::Container.new(docker_data, mock_config, last_log_time: last_log_time, sampler: sampler, metrics: mock_metrics) }
+  let(:container)           { Mobystash::Container.new(docker_data, mock_config, last_log_time: last_log_time, sampler: sampler, metrics: mock_metrics, writer: mock_writer) }
   let(:mock_conn)           { instance_double(Docker::Connection) }
   let(:mock_moby_container) { instance_double(Docker::Container) }
 

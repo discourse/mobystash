@@ -17,7 +17,7 @@ describe Mobystash::System do
   let(:env) { base_env }
   let(:mock_metrics) { MockMetrics.new }
   let(:mock_writer)  { instance_double(LogstashWriter) }
-  let(:mock_config) { MockConfig.new(logger, mock_writer) }
+  let(:mock_config) { MockConfig.new(logger) }
   let(:mock_queue)   { instance_double(Queue) }
   let(:mock_watcher) { instance_double(Mobystash::MobyWatcher) }
   let(:sampler) { Mobystash::Sampler.new(mock_config, mock_metrics) }
@@ -140,7 +140,7 @@ describe Mobystash::System do
         allow(Docker::Connection).to receive(:new).with("unix:///var/run/test.sock", {}).and_return(mock_conn)
 
         allow(Docker::Container).to receive(:get).with("asdfasdfbasic", {}, mock_conn).and_return(docker_data)
-        allow(Mobystash::Container).to receive(:new).with(docker_data, system.config, last_log_time: nil, sampler: sampler, metrics: mock_metrics).and_return(mobystash_container)
+        allow(Mobystash::Container).to receive(:new).with(docker_data, system.config, last_log_time: nil, sampler: sampler, metrics: mock_metrics, writer: mock_writer).and_return(mobystash_container)
         allow(mobystash_container).to receive(:shutdown!)
         allow(mobystash_container).to receive(:last_log_timestamp).and_return("xyzzy")
       end
@@ -149,7 +149,7 @@ describe Mobystash::System do
         it "tells the container to go publish itself" do
           expect(mock_queue).to receive(:pop).and_return([:created, "asdfasdfbasic"])
           expect(Docker::Container).to receive(:get).with("asdfasdfbasic", {}, mock_conn).and_return(docker_data)
-          expect(Mobystash::Container).to receive(:new).with(docker_data, system.config, last_log_time: nil, sampler: sampler, metrics: mock_metrics).and_return(mobystash_container)
+          expect(Mobystash::Container).to receive(:new).with(docker_data, system.config, last_log_time: nil, sampler: sampler, metrics: mock_metrics, writer: mock_writer).and_return(mobystash_container)
           expect(mobystash_container).to receive(:run!)
 
           system.start!

@@ -15,29 +15,55 @@ class Mobystash
   string    :MOBYSTASH_STATE_FILE, default: "./mobystash_state.dump"
   string    :DOCKER_HOST, default: "unix:///var/run/docker.sock"
 
-  counter :mobystash_moby_read_event_exceptions_total,    docstring: " Exception counts while attempting to read log entries from the Moby server"
-  counter :mobystash_log_entries_read_total,        docstring: "How many log entries have been received from Moby"
-  counter :mobystash_log_entries_sent_total,        docstring: "How many log entries have been sent to the LogstashWriter"
-  counter :mobystash_sampled_entries_sent_total,    docstring: "The number of sampled entries which have been sent"
-  counter :mobystash_sampled_entries_dropped_total, docstring: "The number of sampled log entries which didn't get sent"
-  counter :mobystash_unsampled_entries_total,       docstring: "How many log messages we've seen which didn't match any defined sample keys"
-  counter :mobystash_moby_watch_exceptions_total,   docstring: "How many exceptions have been raised while handling docker events", labels: [:class]
-  counter :mobystash_moby_events_total,             docstring: "How many docker events we have seen and processed", labels: [:type]
+  counter :mobystash_moby_read_event_exceptions_total,
+          docstring: " Exception counts while attempting to read log entries from the Moby server",
+          labels: [:container_name, :container_id, :stream]
 
-  histogram :mobystash_last_log_entry_at,           docstring: "The time at which the last log entry was timestamped"
-  histogram :mobystash_sample_ratios,                   docstring: "The current sample ratio for each sample key"
+  counter :mobystash_log_entries_read_total,
+          docstring: "How many log entries have been received from Moby",
+          labels: [:container_name, :container_id, :stream]
+
+  counter :mobystash_log_entries_sent_total,
+          docstring: "How many log entries have been sent to the LogstashWriter",
+          labels: [:container_name, :container_id, :stream]
+
+  counter :mobystash_sampled_entries_sent_total,
+          docstring: "The number of sampled entries which have been sent",
+          labels: [:sample_key]
+
+  counter :mobystash_sampled_entries_dropped_total,
+          docstring: "The number of sampled log entries which didn't get sent",
+          labels: [:sample_key]
+
+  counter :mobystash_unsampled_entries_total,
+          docstring: "How many log messages we've seen which didn't match any defined sample keys"
+
+  counter :mobystash_moby_watch_exceptions_total,
+          docstring: "How many exceptions have been raised while handling docker events",
+          labels: [:class]
+
+  counter :mobystash_moby_events_total,
+          docstring: "How many docker events we have seen and processed",
+          labels: [:type]
+
+  histogram :mobystash_last_log_entry_at,
+            docstring: "The time at which the last log entry was timestamped",
+            labels: [:container_name, :container_id, :stream]
+
+  gauge :mobystash_sample_ratios,
+        docstring: "The current sample ratio for each sample key",
+        labels: [:sample_key]
 
   def initialize(*_)
     super
 
-    @writer = LogstashWriter.new(server_name: config.logstash_server, backlog: config.backlog_size, logger: logger, metrics_registry: metrics, metrics_prefix: :syslogstash_writer)
-    @sampler = MobyStash::Sampler.new(config, metrics)
-    Mobystash::System.new(config, logger: logger, metrics: metrics, sampler: @sampler)
+    writer = LogstashWriter.new(server_name: config.logstash_server, backlog: config.backlog_size, logger: logger, metrics_registry: metrics, metrics_prefix: :syslogstash_writer)
+    sampler = MobyStash::Sampler.new(config, metrics)
+    @system = Mobystash::System.new(config, logger: logger, metrics: metrics, writer: writer, sampler: sampler)
   end
 
   def run
-    @writer.start!
-    @reader.start!
+    @system.start!
   end
 end
 

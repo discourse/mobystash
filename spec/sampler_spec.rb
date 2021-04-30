@@ -8,7 +8,7 @@ describe Mobystash::Sampler do
 
   let(:mock_metrics)    { MockMetrics.new }
   let(:mock_writer)     { instance_double(LogstashWriter) }
-  let(:mock_config)     { MockConfig.new(logger, mock_writer) }
+  let(:mock_config)     { MockConfig.new(logger) }
   let(:sample_ratio)    { 10 }
   let(:sample_keys)     { [] }
   # let(:unsampled)       { instance_double(Prometheus::Client::Counter, "unsampled_totl") }

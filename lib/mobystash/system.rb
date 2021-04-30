@@ -36,7 +36,7 @@ class Mobystash::System
     @logger.info(progname) { "Starting Mobystash System" }
 
     @watcher.run!
-    @config.writer.start!
+    @writer.start!
 
     if @config.enable_metrics
       @logger.info(progname) { "Starting metrics server" }
@@ -63,7 +63,7 @@ class Mobystash::System
       when :created
         begin
           unless @containers[item.last]
-            @containers[item.last] = Mobystash::Container.new(Docker::Container.get(item.last, {}, docker_connection), @config, last_log_time: nil, sampler: @sampler, metrics: @metrics)
+            @containers[item.last] = Mobystash::Container.new(Docker::Container.get(item.last, {}, docker_connection), @config, last_log_time: nil, sampler: @sampler, metrics: @metrics, writer: @writer)
             @containers[item.last].run!
           end
         rescue Docker::Error::NotFoundError
@@ -86,7 +86,7 @@ class Mobystash::System
         @watcher.shutdown!
         @containers.values.each { |c| c.shutdown! }
         write_state_file
-        @config.writer.stop!
+        @writer.stop!
 
         # TODO: Figure that out too
         # if @metrics_server
@@ -109,7 +109,7 @@ class Mobystash::System
 
   # Force LogstashWriter to reconnect
   def reconnect!
-    @config.writer.force_disconnect!
+    @writer.force_disconnect!
   end
 
   private
