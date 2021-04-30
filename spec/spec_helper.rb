@@ -11,7 +11,6 @@ SimpleCov.start do
 end
 
 class MockConfig
-  attr_accessor :drop_regex
   attr_reader :logger, :sample_keys
 
   def initialize(logger)
