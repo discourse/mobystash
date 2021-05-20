@@ -1,81 +1,69 @@
 require_relative './spec_helper'
 
-require 'mobystash/config'
 require 'mobystash/sampler'
 
 describe Mobystash::Sampler do
   uses_logger
 
-  let(:sampler) { Mobystash::Sampler.new(mock_config) }
 
-  let(:mock_config)     { instance_double(Mobystash::Config) }
-  let(:sample_ratio)    { 10 }
-  let(:sample_keys)     { [] }
-  let(:unsampled)       { instance_double(PrometheusExporter::Metric::Counter, "unsampled") }
-  let(:samples_sent)    { instance_double(PrometheusExporter::Metric::Counter, "samples_sent") }
-  let(:samples_dropped) { instance_double(PrometheusExporter::Metric::Counter, "samples_dropped") }
-  let(:sample_ratios)   { instance_double(PrometheusExporter::Metric::Gauge, "sample_ratios") }
-  let(:sent_values)     { {} }
-  let(:dropped_values)  { {} }
-  let(:ratio_values)    { {} }
+  let(:mock_metrics)    { MockMetrics.new }
+  let(:mock_writer)     { instance_double(LogstashWriter) }
+  let(:mock_config)     { MockConfig.new(logger) }
+
+  let(:sampler) { Mobystash::Sampler.new(mock_config, mock_metrics) }
 
   before(:each) do
-    allow(mock_config).to receive(:sample_ratio).and_return(sample_ratio)
-    allow(mock_config).to receive(:sample_keys).and_return(sample_keys)
-    allow(mock_config).to receive(:unsampled_entries).and_return(unsampled)
-    allow(mock_config).to receive(:sampled_entries_sent).and_return(samples_sent)
-    allow(mock_config).to receive(:sampled_entries_dropped).and_return(samples_dropped)
-    allow(mock_config).to receive(:sample_ratios).and_return(sample_ratios)
-
-    allow(unsampled).to receive(:increment)
-    allow(samples_sent).to receive(:increment)
-    allow(samples_dropped).to receive(:increment)
-
-    allow(samples_sent).to receive(:data).and_return(Hash[sent_values.map { |k, v| [{ sample_key: k }, v] }])
-    allow(samples_dropped).to receive(:data).and_return(Hash[dropped_values.map { |k, v| [{ sample_key: k }, v] }])
-    allow(sample_ratios).to receive(:data).and_return(Hash[ratio_values.map { |k, v| [{ sample_key: k }, v] }])
+    mock_config.set_sample_ratio(10)
   end
 
   describe "#calculate_key_ratios" do
-    context "with no samples counted" do
-      it "doesn't set any ratios" do
-        expect(sample_ratios).to_not receive(:set)
-
-        sampler.__send__(:calculate_ratios)
-      end
-    end
-
     context "with entries on a single key" do
-      let(:sent_values)    { { "foo" => 5  } }
-      let(:dropped_values) { { "foo" => 45 } }
 
       it "gives a sample ratio equal to the overall ratio" do
-        expect(sample_ratios).to receive(:observe).with(within(0.001).of(10), sample_key: "foo")
+        mock_config.set_sample_keys([[/foo/, "foo"]])
+
+        sampler.metrics.sampled_entries_sent_total.increment(labels: { sample_key: "foo"}, by: 5)
+        sampler.metrics.sampled_entries_dropped_total.increment(labels: { sample_key: "foo"}, by: 45)
+
+        expect(sampler.metrics.sample_ratios).to receive(:set).with(within(0.001).of(10), labels: { sample_key: "foo" })
 
         sampler.__send__(:calculate_ratios)
       end
     end
 
     context "with entries on multiple keys" do
-      let(:sent_values)    { { "foo" => 5,  "bar" => 10 } }
-      let(:dropped_values) { { "foo" => 45, "bar" => 90 } }
-
       it "gives appropriate sample ratios for each key" do
-        expect(sample_ratios).to receive(:observe).with(within(0.001).of(6.6666), sample_key: "foo")
-        expect(sample_ratios).to receive(:observe).with(within(0.001).of(13.3333), sample_key: "bar")
+        mock_config.set_sample_keys([[/foo/, "foo"], [/bar/, "bar"]])
+        mock_config.set_sample_ratio(10)
+
+        sampler.metrics.sampled_entries_sent_total.increment(labels: { sample_key: "foo"}, by: 5)
+        sampler.metrics.sampled_entries_sent_total.increment(labels: { sample_key: "bar"}, by: 10)
+
+        sampler.metrics.sampled_entries_dropped_total.increment(labels: { sample_key: "foo"}, by: 45)
+        sampler.metrics.sampled_entries_dropped_total.increment(labels: { sample_key: "bar"}, by: 90)
+
+        expect(sampler.metrics.sample_ratios).to receive(:set).with(within(0.001).of(6.6666), labels: { sample_key: "foo" })
+        expect(sampler.metrics.sample_ratios).to receive(:set).with(within(0.001).of(13.3333), labels: { sample_key: "bar" })
 
         sampler.__send__(:calculate_ratios)
       end
     end
 
     context "with one very rare key" do
-      let(:sent_values)    { { "foo" => 50,  "bar" => 100, "bunyip" => 1 } }
-      let(:dropped_values) { { "foo" => 450, "bar" => 900 } }
-
       it "gives appropriate sample ratios for each key" do
-        expect(sample_ratios).to receive(:observe).with(within(0.001).of(9.9933), sample_key: "foo")
-        expect(sample_ratios).to receive(:observe).with(within(0.001).of(19.9866), sample_key: "bar")
-        expect(sample_ratios).to receive(:observe).with(within(0.001).of(1), sample_key: "bunyip")
+        mock_config.set_sample_keys([[/foo/, "foo"], [/bar/, "bar"], [/bunyip/, 'bunyip']])
+        mock_config.set_sample_ratio(10)
+
+        sampler.metrics.sampled_entries_sent_total.increment(labels: { sample_key: "foo"}, by: 50)
+        sampler.metrics.sampled_entries_sent_total.increment(labels: { sample_key: "bar"}, by: 100)
+        sampler.metrics.sampled_entries_sent_total.increment(labels: { sample_key: "bunyip"}, by: 1)
+
+        sampler.metrics.sampled_entries_dropped_total.increment(labels: { sample_key: "foo"}, by: 450)
+        sampler.metrics.sampled_entries_dropped_total.increment(labels: { sample_key: "bar"}, by: 900)
+
+        expect(sampler.metrics.sample_ratios).to receive(:set).with(within(0.001).of(9.9933), labels: { sample_key: "foo" })
+        expect(sampler.metrics.sample_ratios).to receive(:set).with(within(0.001).of(19.9866), labels: { sample_key: "bar" })
+        expect(sampler.metrics.sample_ratios).to receive(:set).with(within(0.001).of(1), labels: { sample_key: "bunyip" })
 
         sampler.__send__(:calculate_ratios)
       end
@@ -96,14 +84,16 @@ describe Mobystash::Sampler do
       end
 
       it "increments the unsampled counter" do
-        expect(unsampled).to receive(:increment)
+        expect(sampler.metrics.unsampled_entries_total).to receive(:increment)
 
         sampler.sample("foo")
       end
     end
 
     context "with one simple sample key" do
-      let(:sample_keys) { [[/x/, "ex"]] }
+      before do
+        mock_config.set_sample_keys([[/x/, "ex"]])
+      end
 
       context "with no prior entries" do
         it "passes an unmatched message without asking for a random number" do
@@ -119,14 +109,16 @@ describe Mobystash::Sampler do
         end
 
         it "increments the sent counter" do
-          expect(samples_sent).to receive(:increment).with(sample_key: "ex")
+          expect(sampler.metrics.sampled_entries_sent_total).to receive(:increment).with(labels: { sample_key: "ex" })
 
           sampler.sample("xyzzy")
         end
       end
 
       context "with a key ratio set" do
-        let(:ratio_values) { { "ex" => 10 } }
+        before do
+          sampler.metrics.sample_ratios.set(10, labels: { sample_key: "ex" })
+        end
 
         it "passes an unmatched message without asking for a random number" do
           expect(sampler).to_not receive(:rand)
@@ -144,7 +136,7 @@ describe Mobystash::Sampler do
           end
 
           it "increments the sent counter" do
-            expect(samples_sent).to receive(:increment).with(sample_key: "ex")
+            expect(sampler.metrics.sampled_entries_sent_total).to receive(:increment).with(labels: { sample_key: "ex" })
 
             sampler.sample("xyzzy")
           end
@@ -166,7 +158,7 @@ describe Mobystash::Sampler do
           end
 
           it "increments the dropped counter" do
-            expect(samples_dropped).to receive(:increment).with(sample_key: "ex")
+            expect(sampler.metrics.sampled_entries_dropped_total).to receive(:increment).with(labels: { sample_key: "ex" })
 
             sampler.sample("xyzzy")
           end
@@ -181,7 +173,9 @@ describe Mobystash::Sampler do
     end
 
     context "with a backreferencing sample key" do
-      let(:sample_keys) { [[/rc:(\d{3})/, "http_\\1"]] }
+      before do
+        mock_config.set_sample_keys([[/rc:(\d{3})/, "http_\\1"]])
+      end
 
       it "passes an unmatched message without asking for a random number" do
         expect(sampler).to_not receive(:rand)
@@ -196,7 +190,7 @@ describe Mobystash::Sampler do
       end
 
       it "increments the sent counter" do
-        expect(samples_sent).to receive(:increment).with(sample_key: "http_200")
+        expect(sampler.metrics.sampled_entries_sent_total).to receive(:increment).with(labels: { sample_key: "http_200" })
 
         sampler.sample("xyzzy rc:200")
       end

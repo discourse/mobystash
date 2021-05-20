@@ -10,4 +10,8 @@ module ExampleGroupMethods
       allow(logger).to receive(:error) { |p, &blk| $stderr.puts "Unexpected error logged (#{p}): #{blk.call}" }
     end
   end
+
+  def uses_mock_config
+
+  end
 end

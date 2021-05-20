@@ -1,6 +1,5 @@
 require_relative './spec_helper'
 
-require 'mobystash/config'
 require 'mobystash/container'
 
 describe Mobystash::Container do
@@ -14,16 +13,23 @@ describe Mobystash::Container do
     }
   end
 
+  let(:mock_metrics)        { MockMetrics.new }
   let(:mock_writer)         { instance_double(LogstashWriter) }
-  let(:config)              { Mobystash::Config.new(env, logger: logger) }
+  let(:mock_config)         { MockConfig.new(logger) }
+  let(:sampler)             { Mobystash::Sampler.new(mock_config, mock_metrics) }
   let(:docker_data)         { container_fixture(container_name) }
   let(:last_log_time)       { nil }
-  let(:container)           { Mobystash::Container.new(docker_data, config, last_log_time: last_log_time) }
+  let(:container)           { Mobystash::Container.new(docker_data, mock_config, last_log_time: last_log_time, sampler: sampler, metrics: mock_metrics, writer: mock_writer) }
   let(:mock_conn)           { instance_double(Docker::Connection) }
   let(:mock_moby_container) { instance_double(Docker::Container) }
 
   before :each do
-    allow(LogstashWriter).to receive(:new).with(server_name: "speccy", logger: logger, backlog: 1_000_000).and_return(mock_writer)
+    allow(LogstashWriter).to receive(:new).with(
+      server_name: "speccy",
+      logger: logger,
+      metrics_registry: instance_of(Prometheus::Client::Registry),
+      backlog: 1_000_000
+    ).and_return(mock_writer)
     allow(Docker::Connection).to receive(:new).with("unix:///", {}).and_call_original
   end
 
@@ -52,7 +58,7 @@ describe Mobystash::Container do
 
   describe "#run" do
     before(:each) do
-      allow(Docker::Connection).to receive(:new).with("unix:///var/run/docker.sock", read_timeout: 3600).and_return(mock_conn)
+      allow(Docker::Connection).to receive(:new).with("unix:///var/run/test.sock", read_timeout: 3600).and_return(mock_conn)
       allow(mock_conn).to receive(:get).and_raise(Mobystash::MobyEventWorker.const_get(:TerminateEventWorker))
       allow(Docker::Container).to receive(:new).with(instance_of(Docker::Connection), instance_of(Hash)).and_call_original
       allow(Docker::Container).to receive(:get).with(container_id, {}, mock_conn).and_return(mock_moby_container)
@@ -775,7 +781,7 @@ describe Mobystash::Container do
     let(:container_id)        { "asdfasdfbasic" }
 
     before(:each) do
-      allow(Docker::Connection).to receive(:new).with("unix:///var/run/docker.sock", read_timeout: 3600).and_return(mock_conn)
+      allow(Docker::Connection).to receive(:new).with("unix:///var/run/test.sock", read_timeout: 3600).and_return(mock_conn)
       allow(Docker::Container).to receive(:new).with(instance_of(Docker::Connection), instance_of(Hash)).and_call_original
       allow(Docker::Container).to receive(:get).with(container_id, {}, mock_conn).and_return(mock_moby_container)
       allow(mock_moby_container).to receive(:info).and_return("Config" => { "Tty" => false }, "State" => { "Status" => "running" })

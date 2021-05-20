@@ -1,7 +1,5 @@
 #!/usr/bin/env ruby
 
-Thread.current.name = "main"
-
 if ENV['RUBY_TRACE_ALLOCATIONS'] == "yep"
   require 'objspace'
 
@@ -11,80 +9,11 @@ end
 require 'sigdump'
 Sigdump.setup('SIGCONT', '+')
 
-require 'logger'
 require 'rbtrace'
 require 'mobystash'
 
-logger = Logger.new($stderr)
-logger.level = Logger.const_get((ENV['MOBYSTASH_LOG_LEVEL'] || "INFO").upcase)
-
-if ENV['MOBYSTASH_DEBUG_MODULES'] && ENV['MOBYSTASH_DEBUG_MODULES'] != ""
-  require 'filtered_debug_logger'
-  Logger.prepend(FilteredDebugLogger)
-  logger.permitted_prognames = ENV['MOBYSTASH_DEBUG_MODULES'].split(/,\s*/)
-end
-
-logger.formatter = ->(s, t, p, m) { "#{s[0]} (#{p}) #{m}\n" }
-
-sig_r, sig_w = IO.pipe
-
-Signal.trap("USR1") do
-  sig_w.print '1'
-end
-
-Signal.trap("USR2") do
-  sig_w.print '2'
-end
-
-Signal.trap("TERM") do
-  sig_w.print 'T'
-end
-
-Signal.trap("INT") do
-  sig_w.print 'I'
-end
-
-Signal.trap("HUP") do
-  sig_w.print 'H'
-end
-
 begin
-  system = Mobystash::System.new(ENV, logger: logger)
-
-  Thread.new do
-    Thread.current.name = "SignalHandler"
-
-    loop do
-      begin
-        c = sig_r.getc
-        if c == 'T'
-          logger.info($0) { "Received SIGTERM." }
-          system.shutdown
-        elsif c == 'I'
-          logger.info($0) { "Received SIGINT." }
-          system.shutdown
-        elsif c == '1'
-          logger.level -= 1 unless logger.level == Logger::DEBUG
-          logger.info($0) { "Received SIGUSR1; log level is now #{Logger::SEV_LABEL[logger.level]}." }
-        elsif c == '2'
-          logger.level += 1 unless logger.level == Logger::ERROR
-          logger.info($0) { "Received SIGUSR2; log level is now #{Logger::SEV_LABEL[logger.level]}." }
-        elsif c == 'H'
-          logger.info($0) { "Received SIGHUP." }
-          system.reconnect!
-        else
-          logger.error($0) { "Got an unrecognised character from signal pipe: #{c.inspect}" }
-        end
-      rescue Exception => ex
-        logger.error($0) { "Exception in signal handler: #{ex.message} (#{ex.class})" }
-      end
-    end
-  end
-
-  ls = Loggerstash.new(logstash_server: "unused", logstash_writer: system.config.logstash_writer)
-  ls.attach(logger)
-
-  system.run
+  Mobystash.new(ENV).start
 rescue Mobystash::Config::InvalidEnvironmentError => ex
   $stderr.puts "F Invalid configuration: #{ex.message}"
   exit 1

@@ -1,6 +1,5 @@
 require_relative './spec_helper'
 
-require 'mobystash/config'
 require 'mobystash/moby_watcher'
 
 describe Mobystash::MobyWatcher do
@@ -18,10 +17,11 @@ describe Mobystash::MobyWatcher do
       "DOCKER_HOST" => "unix:///var/run/test.sock"
     }
   end
-  let(:config) { Mobystash::Config.new(env, logger: logger) }
-
+  let(:mock_metrics) { MockMetrics.new }
+  let(:mock_writer)  { instance_double(LogstashWriter) }
+  let(:mock_config) { MockConfig.new(logger) }
   let(:queue)   { Queue.new }
-  let(:watcher) { Mobystash::MobyWatcher.new(queue: queue, config: config) }
+  let(:watcher) { Mobystash::MobyWatcher.new(queue: queue, config: mock_config, metrics: mock_metrics) }
 
   describe ".new" do
     it "takes a queue and a docker socket URL" do

@@ -1,80 +1,68 @@
 require 'docker-api'
 
-module Mobystash
-  # Keep an eye on all events being emitted by the Moby server, and forward
-  # relevant ones to the main System by means of a message queue.
-  class MobyWatcher
-    include MobyEventWorker
+# Keep an eye on all events being emitted by the Moby server, and forward
+# relevant ones to the main System by means of a message queue.
+class Mobystash::MobyWatcher
+  include Mobystash::MobyEventWorker
 
-    # Set everything up.  `queue` is an instance of `Queue` that the `System`
-    # instance is listening on, and `config` is the `Mobystash::Config`.
-    def initialize(queue:, config:)
-      @queue, @config = queue, config
+  # Set everything up.  `queue` is an instance of `Queue` that the `System`
+  # instance is listening on, and `config` is the `Mobystash::Config`.
+  def initialize(queue:, config:, metrics:)
+    @queue, @config, @metrics = queue, config, metrics
 
-      @docker_host = @config.docker_host
-      @logger = @config.logger
-      @last_event_time = Time.now.to_i
+    @docker_host = @config.docker_host
+    @logger = @config.logger
+    @last_event_time = Time.now.to_i
 
-      @event_count = @config.add_counter(
-        "mobystash_moby_events_total",
-        "How many docker events we have seen and processed"
-      )
+    @metrics.moby_events_total.increment(labels: { type: "ignored" }, by: 0)
+    @metrics.moby_events_total.increment(labels: { type: "create"  }, by: 0)
+    @metrics.moby_events_total.increment(labels: { type: "destroy" }, by: 0)
 
-      @event_count.increment({ type: "ignored" }, 0)
-      @event_count.increment({ type: "create"  }, 0)
-      @event_count.increment({ type: "destroy" }, 0)
+    super
+  end
 
-      @event_errors = @config.add_counter(
-        "mobystash_moby_watch_exceptions_total",
-        "How many exceptions have been raised while handling docker events"
-      )
+  private
 
-      super
-    end
+  def progname
+    @logger_progname ||= "Mobystash::MobyWatcher(#{@docker_host.inspect})"
+  end
 
-    private
+  def logger
+    @logger
+  end
 
-    def progname
-      @logger_progname ||= "Mobystash::MobyWatcher(#{@docker_host.inspect})"
-    end
+  def docker_host
+    @docker_host
+  end
 
-    def logger
-      @logger
-    end
+  def event_exception(ex)
+    @metrics.moby_watch_exceptions_total.increment(labels: { class: ex.class.to_s })
+  end
 
-    def docker_host
-      @docker_host
-    end
+  def process_events(conn)
+    @logger.debug(progname) { "Asking for events since #{@last_event_time}" }
 
-    def event_exception(ex)
-      @event_errors.increment(class: ex.class.to_s)
-    end
+    Docker::Event.since(@last_event_time, {}, conn) do |event|
+      @last_event_time = event.time
 
-    def process_events(conn)
-      @logger.debug(progname) { "Asking for events since #{@last_event_time}" }
+      @logger.debug(progname) { "Docker event@#{event.timeNano}: #{event.Type}.#{event.Action} on #{event.ID}" }
 
-      Docker::Event.since(@last_event_time, {}, conn) do |event|
-        @last_event_time = event.time
+      next unless event.Type == "container"
 
-        @logger.debug(progname) { "Docker event@#{event.timeNano}: #{event.Type}.#{event.Action} on #{event.ID}" }
+      queue_item = if event.Action == "create"
+                     @metrics.moby_events_total.increment(labels: { type: "create" })
+                     [:created, event.ID]
+                   elsif event.Action == "destroy"
+                     @metrics.moby_events_total.increment(labels: { type: "destroy" })
+                     [:destroyed, event.ID]
+                   else
+                     @metrics.moby_events_total.increment(labels: { type: "ignored" })
+                     nil
+                   end
 
-        next unless event.Type == "container"
+      next if queue_item.nil? || queue_item.last.nil?
 
-        queue_item = if event.Action == "create"
-          @event_count.increment(type: "create")
-          [:created, event.ID]
-        elsif event.Action == "destroy"
-          @event_count.increment(type: "destroy")
-          [:destroyed, event.ID]
-        else
-          @event_count.increment(type: "ignored")
-          nil
-        end
-
-        next if queue_item.nil? || queue_item.last.nil?
-
-        @queue.push(queue_item)
-      end
+      @queue.push(queue_item)
     end
   end
 end
