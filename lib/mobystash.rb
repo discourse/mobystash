@@ -16,7 +16,7 @@ class Mobystash
 
   counter :mobystash_moby_read_event_exceptions_total,
           docstring: " Exception counts while attempting to read log entries from the Moby server",
-          labels: [:container_name, :container_id, :stream]
+          labels: [:container_name, :container_id, :class]
 
   counter :mobystash_log_entries_read_total,
           docstring: "How many log entries have been received from Moby",

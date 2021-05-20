@@ -17,18 +17,6 @@ class MockConfig
     @logger = logger
   end
 
-  def syslog_socket
-    '/somewhere/funny'
-  end
-
-  def relay_to_stdout
-    false
-  end
-
-  def relay_sockets
-    []
-  end
-
   def enable_metrics
     true
   end
