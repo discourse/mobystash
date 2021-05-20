@@ -9,15 +9,6 @@ describe Mobystash::Sampler do
   let(:mock_metrics)    { MockMetrics.new }
   let(:mock_writer)     { instance_double(LogstashWriter) }
   let(:mock_config)     { MockConfig.new(logger) }
-  let(:sample_ratio)    { 10 }
-  let(:sample_keys)     { [] }
-  # let(:unsampled)       { instance_double(Prometheus::Client::Counter, "unsampled_totl") }
-  # let(:samples_sent)    { instance_double(Prometheus::Client::Counter, "samples_sent") }
-  # let(:samples_dropped) { instance_double(Prometheus::Client::Counter, "samples_dropped") }
-  # let(:sample_ratios)   { instance_double(Prometheus::Client::Histogram, "sample_ratios") }
-  let(:sent_values)     { {} }
-  let(:dropped_values)  { {} }
-  let(:ratio_values)    { {} }
 
   let(:sampler) { Mobystash::Sampler.new(mock_config, mock_metrics) }
 
@@ -27,8 +18,6 @@ describe Mobystash::Sampler do
 
   describe "#calculate_key_ratios" do
     context "with entries on a single key" do
-      let(:sent_values)    { { "foo" => 5  } }
-      let(:dropped_values) { { "foo" => 45 } }
 
       it "gives a sample ratio equal to the overall ratio" do
         mock_config.set_sample_keys([[/foo/, "foo"]])
@@ -61,9 +50,6 @@ describe Mobystash::Sampler do
     end
 
     context "with one very rare key" do
-      let(:sent_values)    { { "foo" => 50,  "bar" => 100, "bunyip" => 1 } }
-      let(:dropped_values) { { "foo" => 450, "bar" => 900 } }
-
       it "gives appropriate sample ratios for each key" do
         mock_config.set_sample_keys([[/foo/, "foo"], [/bar/, "bar"], [/bunyip/, 'bunyip']])
         mock_config.set_sample_ratio(10)
