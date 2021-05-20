@@ -38,18 +38,6 @@ class Mobystash::System
     @watcher.run!
     @writer.start!
 
-    if @config.enable_metrics
-      @logger.info(progname) { "Starting metrics server" }
-
-      # TODO: Figure out what this should be
-      #
-      # @config.metrics.each do |metric|
-        # @metrics_server.collector.register_metric(metric)
-      # end
-
-      # @metrics_server.start
-    end
-
     run_existing_containers
     run_checkpoint_timer
 
@@ -87,12 +75,6 @@ class Mobystash::System
         @containers.values.each { |c| c.shutdown! }
         write_state_file
         @writer.stop!
-
-        # TODO: Figure that out too
-        # if @metrics_server
-          # PrometheusExporter::Instrumentation::Process.stop
-          # @metrics_server.stop
-        # end
         break
       else
         @logger.error(progname) { "SHOULDN'T HAPPEN: docker watcher sent an unrecognized message: #{item.inspect}.  This is a bug, please report it." }

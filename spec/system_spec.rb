@@ -1,8 +1,5 @@
 require_relative './spec_helper'
 
-require 'prometheus_exporter'
-require 'prometheus_exporter/server'
-
 require 'mobystash'
 
 describe Mobystash::System do
@@ -109,23 +106,6 @@ describe Mobystash::System do
 
         system.start!
       end
-
-      # context "if enable_metrics is true" do
-        # let(:env) { base_env.merge("MOBYSTASH_ENABLE_METRICS" => "yes") }
-        # let(:mock_metrics_server) { instance_double(PrometheusExporter::Server::WebServer) }
-
-        # before(:each) do
-          # allow(mock_metrics_server).to receive(:stop)
-          # allow(mock_metrics_server).to receive(:collector).and_return(PrometheusExporter::Server::Collector.new)
-        # end
-
-        # it "fires up the metrics server" do
-          # expect(PrometheusExporter::Server::WebServer).to receive(:new).with(port: 9367).and_return(mock_metrics_server)
-          # expect(mock_metrics_server).to receive(:start)
-
-          # system.start!
-        # end
-      # end
     end
 
     describe "processing message" do

@@ -1,5 +1,3 @@
-require 'prometheus_exporter'
-require 'prometheus_exporter/metric'
 require 'loggerstash'
 require 'logstash_writer'
 
@@ -9,6 +7,7 @@ class Mobystash
   include ServiceSkeleton
 
   boolean   :MOBYSTASH_ENABLE_METRICS, default: false
+  integer   :MOBYSTASH_METRICS_PORT, default: 9367
   float     :MOBYSTASH_SAMPLE_RATIO, default: 1, range: 1..Float::INFINITY
   float     :MOBYSTASH_STATE_CHECKPOINT_INTERVAL, default: 1, range: 0..Float::INFINITY
   kv_list   :MOBYSTASH_SAMPLE_KEYS, default: {}, key_pattern: /\AMOBYSTASH_SAMPLE_KEY_(.*)\z/

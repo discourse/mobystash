@@ -59,7 +59,6 @@ GEM
     parser (2.7.1.4)
       ast (~> 2.4.1)
     prometheus-client (2.1.0)
-    prometheus_exporter (0.5.3)
     pry (0.13.1)
       coderay (~> 1.1)
       method_source (~> 1.0)
@@ -143,7 +142,6 @@ DEPENDENCIES
   logstash_writer
   mobystash!
   murmurhash3 (~> 0.1)
-  prometheus_exporter
   pry-byebug
   rake (>= 11)
   rbtrace (~> 0.4)
